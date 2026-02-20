@@ -1,0 +1,494 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+:root {
+    --bg-main: #0a0e17;
+    --panel-bg: rgba(16, 25, 43, 0.85);
+    --border-color: #1e3a5f;
+    --text-main: #64b5f6;
+    --text-dim: #427fb3;
+    --accent-blue: #00e5ff;
+    --accent-green: #00e676;
+    --gradient-glow: 0 0 10px rgba(0, 229, 255, 0.3);
+
+    /* Panic state colors */
+    --panic-orange: #ff9100;
+    --panic-red: #ff1744;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+    font-family: 'Share Tech Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    background-image:
+        radial-gradient(circle at center, rgba(10, 14, 23, 0.8) 0%, rgba(0, 0, 0, 1) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 229, 255, 0.03) 2px, rgba(0, 229, 255, 0.03) 4px);
+}
+
+/* Base Layout Container */
+.os-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 15px;
+    gap: 15px;
+    position: relative;
+    z-index: 1;
+    transition: all 0.3s ease;
+}
+
+/* Header */
+.os-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--panel-bg);
+    border: 1px solid var(--accent-blue);
+    padding: 10px 20px;
+    box-shadow: var(--gradient-glow);
+    font-size: 1.2rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px var(--accent-blue);
+}
+
+.status-indicator {
+    color: var(--accent-green);
+    margin-left: 20px;
+    text-shadow: 0 0 5px var(--accent-green);
+}
+
+.status-indicator::before {
+    content: "●";
+    margin-right: 8px;
+    animation: blink 2s infinite;
+}
+
+/* No full screen body panic overrides */
+
+/* Main Grid */
+.grid-layout-new {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 15px;
+    flex: 1;
+    height: calc(100vh - 80px);
+    /* Adjust based on header height */
+}
+
+/* Panels */
+.panel {
+    background: var(--panel-bg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    overflow: hidden;
+    position: relative;
+}
+
+.panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent-blue), transparent);
+}
+
+.panel-header {
+    background: rgba(0, 229, 255, 0.1);
+    border-bottom: 1px solid var(--border-color);
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.panel-header h2 {
+    font-size: 1rem;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 0 0 4px #fff;
+}
+
+.panel-content {
+    padding: 15px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.scrollable {
+    overflow-y: auto;
+}
+
+.scrollable::-webkit-scrollbar {
+    width: 6px;
+}
+
+.scrollable::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.scrollable::-webkit-scrollbar-thumb {
+    background: var(--accent-blue);
+}
+
+/* Tabs */
+.tab-header {
+    display: flex;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 2px solid var(--border-color);
+}
+
+.tab {
+    padding: 10px 20px;
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: var(--text-dim);
+    transition: all 0.2s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab:hover {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.tab.active {
+    color: var(--text-main);
+    border-bottom: 3px solid var(--accent-blue);
+    background: rgba(0, 229, 255, 0.1);
+}
+
+/* Badges */
+.badge {
+    background: var(--accent-blue);
+    color: #000;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.mt-4 {
+    margin-top: 20px;
+}
+
+.mt-2 {
+    margin-top: 10px;
+}
+
+/* Control Panel */
+.control-desc {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+button {
+    background: transparent;
+    border: 1px solid var(--accent-blue);
+    color: var(--accent-blue);
+    font-family: 'Share Tech Mono', monospace;
+    padding: 10px;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0, 229, 255, 0.5);
+    transition: all 0.2s;
+    text-transform: uppercase;
+}
+
+button:hover {
+    background: rgba(0, 229, 255, 0.2);
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.4) inset;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+.manual-panic-btn {
+    border-color: var(--panic-red);
+    color: var(--panic-red);
+    text-shadow: 0 0 5px rgba(255, 23, 68, 0.6);
+}
+
+.manual-panic-btn:hover {
+    background: rgba(255, 23, 68, 0.2);
+    box-shadow: 0 0 15px rgba(255, 23, 68, 0.5) inset;
+}
+
+.clear-panic-btn {
+    border-color: var(--accent-green);
+    color: var(--accent-green);
+}
+
+.clear-panic-btn:hover {
+    background: rgba(0, 230, 118, 0.2);
+}
+
+/* Removed unit list styles */
+
+/* Events Log */
+.event-item {
+    border-left: 2px solid var(--text-dim);
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.02);
+    margin-bottom: 8px;
+    animation: slide-in 0.3s ease-out forwards;
+}
+
+.event-item .time {
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+    display: block;
+}
+
+.event-item .title {
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.event-item.high-priority {
+    border-left-color: var(--panic-red);
+    background: rgba(255, 23, 68, 0.05);
+}
+
+.event-item.medium-priority {
+    border-left-color: #ffea00;
+}
+
+.panic-log-flash {
+    background: rgba(255, 145, 0, 0.2) !important;
+    border-left: 5px solid var(--panic-orange) !important;
+    animation: panic-flash-bg 0.8s infinite alternate !important;
+}
+
+.panic-container-glow {
+    box-shadow: inset 0 0 20px rgba(255, 145, 0, 0.2);
+}
+
+/* Chat Log */
+.chat-msg {
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    animation: fade-in 0.3s ease-in;
+}
+
+.chat-msg .sender {
+    font-weight: bold;
+    display: inline-block;
+    margin-right: 8px;
+}
+
+.chat-msg.joking .sender {
+    color: #b39ddb;
+}
+
+/* Purple for jokes */
+.chat-msg.serious .sender {
+    color: var(--accent-blue);
+}
+
+/* Blue for serious */
+.chat-msg.worried .sender {
+    color: var(--panic-red);
+    animation: blink 1s infinite;
+}
+
+/* Red for worried */
+.chat-msg.worried .text {
+    color: #ffab91;
+    font-weight: bold;
+    font-style: italic;
+}
+
+.chat-msg.dispatch-msg .sender {
+    color: #00e676;
+    text-shadow: 0 0 5px rgba(0, 230, 118, 0.5);
+}
+
+/* Green for dispatch */
+.chat-msg.dispatch-msg .text {
+    color: #fff;
+    font-weight: bold;
+}
+
+.chat-msg .text {
+    display: inline;
+    color: #ddd;
+    font-size: 0.95rem;
+}
+
+/* Documents View */
+.document-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 4px;
+}
+
+.doc-header {
+    font-size: 1.1rem;
+    color: var(--accent-blue);
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.doc-meta {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 5px;
+}
+
+.doc-body {
+    font-size: 0.95rem;
+    line-height: 1.4;
+    color: #ccc;
+    margin-bottom: 15px;
+}
+
+.doc-btn {
+    border: 1px solid var(--text-dim);
+    color: var(--text-dim);
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+.doc-btn:hover {
+    color: #fff;
+    border-color: #fff;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Roster View */
+.roster-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--border-color);
+    padding: 10px 15px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.roster-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.roster-id {
+    font-weight: bold;
+    color: var(--accent-blue);
+    font-size: 1.1rem;
+}
+
+.roster-status {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+}
+
+.roster-status.on-duty {
+    color: var(--accent-green);
+}
+
+.roster-status.off-duty {
+    color: var(--text-dim);
+}
+
+.roster-status.suspended {
+    color: var(--panic-orange);
+}
+
+.roster-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.roster-btn {
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: #ccc;
+    padding: 4px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+}
+
+.roster-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: #fff;
+}
+
+/* Removed fullscreen panic overlay styling */
+
+/* Animations */
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0;
+    }
+}
+
+@keyframes fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slide-in {
+    from {
+        opacity: 0;
+        transform: translateX(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes panic-flash-bg {
+    0% {
+        background: rgba(255, 145, 0, 0.1);
+        border-left-width: 3px;
+    }
+
+    100% {
+        background: rgba(255, 23, 68, 0.4);
+        border-left-width: 8px;
+        box-shadow: inset 0 0 15px rgba(255, 145, 0, 0.5);
+    }
+}

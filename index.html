@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MCPD Dispatch Terminal</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="os-container" id="os-container">
+        <!-- HEADER -->
+        <header class="os-header">
+            <div class="logo">MCPD DISPATCH TERMINAL // SYSTEM ONLINE</div>
+            <div class="status-bar">
+                <span id="current-time" class="time">00:00:00</span>
+                <span class="status-indicator">SECURE CONNECTION</span>
+            </div>
+        </header>
+
+        <!-- MAIN LAYOUT -->
+        <main class="grid-layout-new">
+            <!-- LEFT PANEL: CONTROLS -->
+            <section class="panel side-panel">
+                <div class="panel-header">
+                    <h2>MANUAL CONTROLS / EVENTS</h2>
+                </div>
+                <div class="panel-content control-panel" style="flex: 1; overflow-y: auto;">
+                    <p class="control-desc">Use buttons below to simulate events and trigger officer distress signals
+                        into the log.</p>
+
+                    <h3 style="color: #ffea00; font-size: 0.9rem; margin-top: 10px;">STANDARD CALLOUTS</h3>
+                    <button class="manual-event-btn" id="manual-event-robbery"
+                        style="border-color: #ff9800; color: #ff9800;">10-31 ROBBERY</button>
+                    <button class="manual-event-btn" id="manual-event-suspicious"
+                        style="border-color: #ffeb3b; color: #ffeb3b;">10-43 SUSPICIOUS ACTIVITY</button>
+                    <button class="manual-event-btn" id="manual-event-traffic"
+                        style="border-color: var(--accent-blue); color: var(--accent-blue);">10-50 TRAFFIC STOP</button>
+                    <button class="manual-event-btn" id="manual-event-random"
+                        style="border-color: #ccc; color: #ccc;">RANDOM CALLOUT</button>
+
+                    <h3 style="color: var(--panic-red); font-size: 0.9rem; margin-top: 20px;">CRITICAL EMERGENCIES</h3>
+                    <button class="manual-panic-btn" id="manual-panic-btn">TRIGGER OFFICER PANIC</button>
+                    <button class="clear-panic-btn" id="clear-panic-btn"
+                        style="display: none; margin-top: 10px;">RESOLVE ALL PANICS</button>
+
+                    <div class="toggle-group mt-4">
+                        <label for="auto-events" style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox" id="auto-events" checked>
+                            Auto Sim Logic Enabled
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RIGHT PANEL: UNIFIED LOGS -->
+            <section class="panel main-panel">
+                <div class="panel-header tab-header" style="justify-content: flex-start; gap: 20px; overflow-x: auto;">
+                    <div class="tab active" id="tab-unified" style="cursor: pointer; white-space: nowrap;">DISPATCH LOG
+                    </div>
+                    <div class="tab" id="tab-documents"
+                        style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">DOCUMENT LOGS</div>
+                    <div class="tab" id="tab-database"
+                        style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">MCPD DATABASE</div>
+                    <div class="tab" id="tab-wanted"
+                        style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">WANTED TARGETS</div>
+                    <span class="badge" style="margin-left: auto;">MCPD-NET</span>
+                </div>
+
+                <!-- UNIFIED VIEW -->
+                <div class="panel-content scrollable" id="unified-log"
+                    style="flex: 1; margin-bottom: 10px; display: flex; flex-direction: column;">
+                    <!-- Events and Chats populated by JS -->
+                </div>
+
+                <!-- DOCUMENTS VIEW (Hidden by default) -->
+                <div class="panel-content scrollable" id="document-log"
+                    style="flex: 1; margin-bottom: 10px; display: none;">
+                    <h3
+                        style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        OFFICIAL MCPD ARREST REPORTS</h3>
+                    <div id="document-list">
+                        <!-- Mock documents -->
+                    </div>
+                </div>
+
+                <!-- PERSONNEL VIEW (Hidden by default) -->
+                <div class="panel-content scrollable" id="personnel-log"
+                    style="flex: 1; margin-bottom: 10px; display: none;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 15px;">
+                        <h3 style="color: #fff; margin: 0;">ACTIVE ROSTER MANAGEMENT</h3>
+                        <button id="recruit-btn"
+                            style="border-color: var(--accent-green); color: var(--accent-green); padding: 5px 10px; font-size: 0.85rem;">+
+                            RECRUIT UNIT</button>
+                    </div>
+                    <div id="roster-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Roster items injected by JS -->
+                    </div>
+                </div>
+
+                <!-- DATABASE VIEW (Hidden by default) -->
+                <div class="panel-content scrollable" id="database-log"
+                    style="flex: 1; margin-bottom: 10px; display: none;">
+                    <h3
+                        style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        MCPD CITIZEN DATABASE QUERY</h3>
+                    <div style="color: var(--text-dim); font-style: italic;">> Query terminal online. Enter citizen ID
+                        or facial scan parameters to begin...<br>> Note: All citizens are presumed guilty until proven
+                        otherwise per MCPD directive 4-A.</div>
+                </div>
+
+                <!-- WANTED VIEW (Hidden by default) -->
+                <div class="panel-content scrollable" id="wanted-log"
+                    style="flex: 1; margin-bottom: 10px; display: none;">
+                    <h3
+                        style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
+                        HIGH VALUE TARGETS - SHOOT ON SIGHT</h3>
+                    <div
+                        style="color: var(--panic-red); border-left: 3px solid var(--panic-red); padding-left: 10px; margin-bottom: 15px;">
+                        <strong>HVT: "Ghost"</strong><br>
+                        Crime: Jaywalking, resisting arrest, destruction of corporate property.<br>
+                        Bounty: 50,000 Credits. DEAD ONLY.
+                    </div>
+                    <div
+                        style="color: var(--panic-orange); border-left: 3px solid var(--panic-orange); padding-left: 10px;">
+                        <strong>HVT: Unregistered Cyber-Doc "Fixer"</strong><br>
+                        Crime: Operating without medical license, smuggling weapons.<br>
+                        Bounty: 25,000 Credits. DEAD OR ALIVE, PREFERABLY DEAD.
+                    </div>
+                </div>
+
+                <!-- Chat Input System (Only visible in unified view) -->
+                <div class="chat-input-container" id="chat-input-area"
+                    style="padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
+                    <input type="text" id="dispatch-chat-input" placeholder="Transmit to units..."
+                        style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-blue); color: #fff; padding: 8px; font-family: 'Share Tech Mono', monospace; outline: none;">
+                    <button id="dispatch-chat-send" style="padding: 8px 15px; font-size: 0.9rem;">SEND</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- FULL REPORT MODAL -->
+        <div id="report-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title" style="color: var(--accent-blue); text-shadow: 0 0 5px var(--accent-blue);">
+                        MCPD INCIDENT REPORT</h2>
+                    <button id="modal-close" class="modal-close-btn"
+                        style="border: none; background: transparent; color: var(--panic-red); font-size: 1.5rem; cursor: pointer;"
+                        onclick="document.getElementById('report-modal').style.display='none'">[X]</button>
+                </div>
+                <div class="modal-body" id="modal-body"
+                    style="padding: 20px; color: #ccc; line-height: 1.6; max-height: 60vh; overflow-y: auto;">
+                    <!-- Report injected here -->
+                </div>
+                <div class="modal-footer"
+                    style="padding: 15px; border-top: 1px solid var(--border-color); text-align: right;">
+                    <button style="border-color: var(--accent-green); color: var(--accent-green);"
+                        onclick="document.getElementById('report-modal').style.display='none'">AUTHORIZE &
+                        CLOSE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PRIVATE MESSAGE MODAL -->
+        <div id="pm-modal" class="modal-overlay" style="display: none;">
+            <div class="modal-content" style="max-width: 500px;">
+                <div class="modal-header">
+                    <h2 id="pm-title" style="color: var(--accent-blue); text-shadow: 0 0 5px var(--accent-blue);">
+                        PRIVATE COMMS: UNIT</h2>
+                    <button class="modal-close-btn"
+                        style="border: none; background: transparent; color: var(--panic-red); font-size: 1.5rem; cursor: pointer;"
+                        onclick="document.getElementById('pm-modal').style.display='none'">[X]</button>
+                </div>
+                <div class="modal-body" id="pm-chat-history"
+                    style="padding: 20px; color: #ccc; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.5);">
+                    <!-- Chat history injected here -->
+                </div>
+                <div class="modal-footer"
+                    style="padding: 10px; border-top: 1px solid var(--border-color); display: flex; gap: 10px;">
+                    <input type="text" id="pm-input" placeholder="Type private message..."
+                        style="flex: 1; background: rgba(0,0,0,0.8); border: 1px solid var(--border-color); color: #fff; padding: 8px; font-family: inherit;">
+                    <button id="pm-send-btn"
+                        style="border-color: var(--accent-blue); color: var(--accent-blue);">SEND</button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <script src="app.js"></script>
+</body>
+
+</html>
