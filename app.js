@@ -557,16 +557,13 @@ function triggerPanic(unitName = null) {
     playPanicSound();
     clearPanicBtn.style.display = 'inline-block';
 
-    // Set auto-resolve for visual flashing (15 seconds)
-    panicData.visualTimeout = setTimeout(() => {
-        div.classList.remove('panic-log-flash');
-        div.style.borderLeftColor = 'var(--panic-red)'; // Retain red border, but stop flashing
-    }, 15000);
-
-    // Set auto-resolve for panic sound (10 seconds)
+    // Set auto-resolve for panic sound (5 seconds)
     panicData.soundTimeout = setTimeout(() => {
-        resolveSpecificPanic(unit);
-    }, 10000); // 10 seconds
+        // Only stop the sound, don't auto-resolve the entire panic state
+        stopPanicSound();
+    }, 5000); // 5 seconds
+
+    // Visual flashing remains forever until resolveSpecificPanic is called manually via Clear Panics button
 }
 
 function resolveSpecificPanic(unit) {
@@ -575,6 +572,16 @@ function resolveSpecificPanic(unit) {
     const data = activePanics.get(unit);
     clearTimeout(data.visualTimeout);
     clearTimeout(data.soundTimeout);
+
+    // Find the flashing log element for this unit and remove the flashing class
+    // We can find all elements with panic-log-flash and look for unit name
+    document.querySelectorAll('.panic-log-flash').forEach(el => {
+        if (el.innerHTML.includes(`Unit ${unit}`)) {
+            el.classList.remove('panic-log-flash');
+            el.style.borderLeftColor = 'var(--panic-red)';
+        }
+    });
+
     activePanics.delete(unit);
 
     if (activePanics.size === 0) {
