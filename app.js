@@ -295,13 +295,15 @@ function simulateEvent(specificCrime = null) {
     const div = document.createElement('div');
     const prioClass = crime.priority === 'high' ? 'high-priority' : (crime.priority === 'medium' ? 'medium-priority' : '');
 
+    const respondingUnits = [getRandomItem(getActiveCallsigns()), getRandomItem(getActiveCallsigns())];
+
     div.className = `event-item ${prioClass}`;
     div.style.width = "100%";
     div.innerHTML = `
         <span class="time">${getCurrentTimeStr()}</span>
         <div class="title">${crime.title}</div>
         ${crime.group ? `<div style="color: #ff9800; font-size: 0.85rem;">[INTEL] Known Affiliation: ${crime.group}</div>` : ''}
-        <div style="font-size: 0.9rem; color: #ccc;">Responding: ${getRandomItem(getActiveCallsigns())} & ${getRandomItem(getActiveCallsigns())}</div>
+        <div style="font-size: 0.9rem; color: #ccc;">Responding: ${respondingUnits[0]} & ${respondingUnits[1]}</div>
     `;
 
     unifiedLogEl.appendChild(div);
@@ -313,41 +315,77 @@ function simulateEvent(specificCrime = null) {
         unifiedLogEl.removeChild(unifiedLogEl.firstChild);
     }
 
-    // Also add to document log for mock purposes
-    mockAddDocument(crime);
+    // Delay the resolution to simulate travel, conflict, and radio reporting
+    setTimeout(() => {
+        const reportingUnit = respondingUnits[0];
+        const isROEEnabled = roeToggleCheckbox.checked;
+
+        let reportMsg = "";
+        if (isROEEnabled) {
+            reportMsg = getRandomItem([
+                `10-4, Dispatch. Suspect apprehended non-lethally. Requesting transport.`,
+                `Target secured after minor struggle. Disarming and filing report.`,
+                `Suspect detained successfully. Code 4. No serious casualties.`,
+                `We have the suspect in cuffs. Transporting to booking now.`
+            ]);
+        } else {
+            reportMsg = getRandomItem([
+                `Target neutralized. Call the meat wagon. Filing report now.`,
+                `Threat eliminated. No survivors. Returning to patrol.`,
+                `Suspect resisted. Lethal force applied. Area is red but quiet.`,
+                `Subject down. Send bio-hazard cleanup to our coordinates.`
+            ]);
+        }
+
+        // Emulate the officer speaking in the radio channel
+        addChatMessage(reportingUnit, reportMsg, "serious");
+
+        // Generate the document AFTER they report it
+        mockAddDocument(crime, respondingUnits, isROEEnabled);
+
+    }, 4000 + Math.random() * 6000); // 4 to 10 seconds later
 }
 
-function mockAddDocument(crime) {
+function mockAddDocument(crime, respondingUnits, isROEEnabled) {
     const doc = document.createElement('div');
     doc.className = "document-card";
 
-    // Determine suspect outcome based on the new ROE toggle
-    const isROEEnabled = roeToggleCheckbox.checked;
-    let suspectStatus = "";
+    let weapons = [];
+    let tactics = [];
+    let outcome = "";
 
     if (isROEEnabled) {
-        // ROE ON: Less lethal force, suspects generally survive
-        suspectStatus = (crime.priority === 'high') ?
-            "Suspect apprehended after significant struggle and non-lethal tasering. Medical requested for minor injuries." :
-            "Suspect complied with verbal commands and was detained without incident.";
+        weapons = ["Stun Baton", "Taser Mk4", "Beanbag Shotgun", "Pepper Spray", "Verbal Commands", "Restraint Cuffs", "Net Gun"];
+        tactics = ["deployed non-lethal deterrents", "established a perimeter and negotiated", "engaged in a minor physical struggle", "disarmed suspect with minimal force", "utilized compliance holds and takedowns"];
+        outcome = "Suspect apprehended and transported to MCPD holding cells. Medical requested for minor bruises.";
     } else {
-        // ROE OFF: Trigger-happy, highly lethal
-        suspectStatus = (crime.priority === 'high') ?
-            "Suspect neutralized via lethal force. Multiple traumatic injuries sustained." :
-            "Suspect resisted pacification. Lethal force authorized and deployed. Suspect deceased on scene.";
+        weapons = ["Standard Issue Pulse Pistol", "Tactical Shotgun", "Submachine Gun", "Heavy Ordnance", "High-Caliber Sniper Rifle", "Fragmentation Grenades", "Thermal Blade"];
+        tactics = ["breached location and laid down suppressing fire", "authorized free-fire zone upon arrival", "executed PIT maneuver followed by intense shootout", "utilized maximum pacification force", "neutralized suspect immediately upon visual confirmation"];
+        outcome = "Suspect neutralized via lethal force. Multiple traumatic injuries sustained. Deceased on scene.";
     }
 
+    const weaponUsed1 = getRandomItem(weapons);
+    // Ensure weapon 2 is different if possible
+    let weaponUsed2 = getRandomItem(weapons);
+    if (weaponUsed1 === weaponUsed2) weaponUsed2 = getRandomItem(weapons);
+
+    const tacticUsed = getRandomItem(tactics);
+    const officersStr = respondingUnits.join(', ');
+    const dateStr = new Date().toLocaleDateString('en-US') + " " + getCurrentTimeStr();
+
     const fullReport = `INCIDENT TYPE: ${crime.title}
-TIME FILED: ${getCurrentTimeStr()}
-RESPONDING OFFICERS: ${getRandomItem(getActiveCallsigns())}, ${getRandomItem(getActiveCallsigns())}
+TIME FILED: ${dateStr}
+RESPONDING OFFICERS: ${officersStr}
+TOTAL UNITS DEPLOYED: ${respondingUnits.length}
 ${crime.group ? "GANG AFFILIATION: " + crime.group + "<br>" : ""}
--- NARRATIVE --<br>
-Responding officers arrived at the scene. ${isROEEnabled ? "Officers followed standard engagement rules." : "Officers deployed standard pacification protocols (excessive force authorized)."} ${suspectStatus}<br><br>
-${isROEEnabled ? "Civilian area secured. Suspect transported to booking." : "Multiple shell casings recovered from officer firearms. Requesting bio-hazard cleanup crew to the coordinates for bodily fluid removal."}`;
+-- INCIDENT NARRATIVE --<br>
+Officers arrived at the dispatched coordinates. They ${tacticUsed} utilizing a ${weaponUsed1} and a ${weaponUsed2}. <br><br>
+${outcome}<br><br>
+${isROEEnabled ? "Civilian area secured. Evidence logged in property room. All officers uninjured." : "Multiple shell casings recovered from officer firearms. Requesting bio-hazard cleanup crew to the coordinates for bodily fluid removal. Acceptable collateral damage parameters met."}`;
 
     doc.innerHTML = `
-        <div class="doc-header">REPORT: ${crime.title}</div>
-        <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Status: PENDING</div>
+        <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
+        <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
         <div class="doc-body">Initial officer observation notes: Suspect matched description. Proceeded with tactical entry.</div>
         <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
     `;
