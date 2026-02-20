@@ -302,7 +302,7 @@ function addChatMessage(sender, text, typeClass = 'serious') {
 }
 
 // User Chat Processing
-function processDispatchChat() {
+async function processDispatchChat() {
     const text = dispatchChatInput.value.trim();
     if (!text) return;
 
@@ -310,39 +310,38 @@ function processDispatchChat() {
     addChatMessage('DISPATCH', text, 'dispatch-msg');
     dispatchChatInput.value = '';
 
-    // Evaluate message to determine if it's crazy/gibberish
-    // Heuristics for "crazy":
-    // 1. Lots of numbers/symbols relative to letters.
-    // 2. Extremely long words with no vowels (keyboard mashing).
+    const reactionSender = getRandomItem(getActiveCallsigns());
 
-    // Check ratio of numbers to total length
-    const numbersCount = (text.match(/[0-9]/g) || []).length;
-    const isMostlyNumbers = numbersCount > text.length * 0.4;
+    // Show typing indicator
+    const typingDiv = document.createElement('div');
+    typingDiv.className = `chat-msg serious`;
+    typingDiv.innerHTML = `
+        <span class="time" style="color: #666; font-size: 0.8rem; margin-right: 5px;">${getCurrentTimeStr()}</span>
+        <span class="sender">[${reactionSender}]</span> 
+        <span class="text" style="font-style:italic; color:var(--text-dim);">transmitting...</span>
+    `;
+    unifiedLogEl.appendChild(typingDiv);
+    scrollToBottom(unifiedLogEl);
 
-    // Check for keyboard mashing (long strings without vowels / spaces)
-    const hasGibberish = text.split(' ').some(word => word.length > 8 && !word.match(/[aeiouy]/i));
+    try {
+        const prompt = "You are a hardened, cynical cyberpunk police officer in a dystopian megacity responding briefly (1-2 sentences max) over the radio to the dispatcher who just said: '" + text + "'. Keep it gritty, use cop lingo, no asterisks, no roleplay actions.";
 
-    // Is it entirely weird symbols/numbers?
-    const isOnlyWeirdChars = /^[^a-zA-Z]+$/.test(text);
-
-    const isCrazy = isMostlyNumbers || hasGibberish || isOnlyWeirdChars || text.length > 100 && !text.includes(' ');
-
-    // Delay reaction slightly for realism
-    setTimeout(() => {
-        const reactionSender = getRandomItem(getActiveCallsigns());
-        let reactionText = '';
-        let reactionClass = '';
-
-        if (isCrazy) {
-            reactionText = getRandomItem(reactionCrazyChats);
-            reactionClass = 'worried';
+        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+        if (response.ok) {
+            let reactionText = await response.text();
+            reactionText = reactionText.replace(/^["']|["']$/g, '').trim(); // Remove surrounding quotes if any
+            typingDiv.querySelector('.text').innerHTML = reactionText;
+            typingDiv.querySelector('.text').style.fontStyle = 'normal';
+            typingDiv.querySelector('.text').style.color = 'inherit';
         } else {
-            reactionText = getRandomItem(reactionNormalChats);
-            reactionClass = 'serious';
+            throw new Error("API Failed");
         }
-
-        addChatMessage(reactionSender, reactionText, reactionClass);
-    }, 1500 + Math.random() * 1000); // 1.5 - 2.5 second delay
+    } catch (e) {
+        // Fallback to static reaction if AI fails
+        typingDiv.querySelector('.text').innerHTML = getRandomItem(reactionNormalChats);
+        typingDiv.querySelector('.text').style.fontStyle = 'normal';
+        typingDiv.querySelector('.text').style.color = 'inherit';
+    }
 }
 
 
@@ -797,12 +796,40 @@ function sendPM() {
     pmInput.value = '';
     pmHistory.scrollTop = pmHistory.scrollHeight;
 
-    // Simulate Reply
-    setTimeout(() => {
-        const reply = Math.random() < 0.5 ? getRandomItem(reactionNormalChats) : getRandomItem(reactionCrazyChats);
-        pmHistory.innerHTML += `<div style="text-align:left;"><span style="color:var(--accent-green);">[${currentPMUnit}]</span> ${reply}</div>`;
+    // Show typing visual for PM
+    const typingId = 'pm-typing-' + Date.now();
+    pmHistory.innerHTML += `<div id="${typingId}" style="text-align:left; color:var(--text-dim); font-style:italic;"><span style="color:var(--accent-green);">[${currentPMUnit}]</span> parsing...</div>`;
+    pmHistory.scrollTop = pmHistory.scrollHeight;
+
+    // Fetch AI Reply
+    setTimeout(async () => {
+        try {
+            const prompt = "You are a cyberpunk police officer named " + currentPMUnit + " receiving a private direct text message from Dispatch: '" + text + "'. Reply briefly (1-2 sentences max). No asterisks, no roleplay actions.";
+            const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+            if (response.ok) {
+                let reactionText = await response.text();
+                reactionText = reactionText.replace(/^["']|["']$/g, '').trim();
+                const typingEl = document.getElementById(typingId);
+                if (typingEl) {
+                    typingEl.innerHTML = `<span style="color:var(--accent-green);">[${currentPMUnit}]</span> ${reactionText}`;
+                    typingEl.style.color = '#ccc';
+                    typingEl.style.fontStyle = 'normal';
+                }
+            } else {
+                throw new Error("API Failed");
+            }
+        } catch (e) {
+            // Fallback
+            const typingEl = document.getElementById(typingId);
+            if (typingEl) {
+                const fallbackReply = Math.random() < 0.5 ? getRandomItem(reactionNormalChats) : "10-4. Cannot confirm at this time.";
+                typingEl.innerHTML = `<span style="color:var(--accent-green);">[${currentPMUnit}]</span> ${fallbackReply}`;
+                typingEl.style.color = '#ccc';
+                typingEl.style.fontStyle = 'normal';
+            }
+        }
         pmHistory.scrollTop = pmHistory.scrollHeight;
-    }, 1000 + Math.random() * 1500);
+    }, 500);
 }
 
 pmSendBtn.addEventListener('click', sendPM);
