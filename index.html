@@ -118,28 +118,32 @@
                     <h3
                         style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
                         MCPD CITIZEN DATABASE QUERY</h3>
-                    <div style="color: var(--text-dim); font-style: italic;">> Query terminal online. Enter citizen ID
+                    <div style="color: var(--text-dim); font-style: italic; margin-bottom: 15px;">> Query terminal
+                        online. Enter citizen ID
                         or facial scan parameters to begin...<br>> Note: All citizens are presumed guilty until proven
                         otherwise per MCPD directive 4-A.</div>
+
+                    <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                        <input type="text" id="db-search-input" placeholder="Enter Name or Citizen ID..."
+                            style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-blue); color: #fff; padding: 10px; font-family: 'Share Tech Mono', monospace; font-size: 1rem; outline: none;">
+                        <button id="db-search-btn"
+                            style="padding: 10px 20px; font-size: 1rem; border-color: var(--accent-blue); color: var(--accent-blue);">SEARCH</button>
+                    </div>
+
+                    <div id="db-results"
+                        style="border: 1px solid var(--border-color); padding: 15px; margin-top: 10px; min-height: 200px; display: none;">
+                        <!-- DB Results Injected Here -->
+                    </div>
                 </div>
 
                 <!-- WANTED VIEW (Hidden by default) -->
                 <div class="panel-content scrollable" id="wanted-log"
                     style="flex: 1; margin-bottom: 10px; display: none;">
                     <h3
-                        style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                        HIGH VALUE TARGETS - SHOOT ON SIGHT</h3>
-                    <div
-                        style="color: var(--panic-red); border-left: 3px solid var(--panic-red); padding-left: 10px; margin-bottom: 15px;">
-                        <strong>HVT: "Ghost"</strong><br>
-                        Crime: Jaywalking, resisting arrest, destruction of corporate property.<br>
-                        Bounty: 50,000 Credits. DEAD ONLY.
-                    </div>
-                    <div
-                        style="color: var(--panic-orange); border-left: 3px solid var(--panic-orange); padding-left: 10px;">
-                        <strong>HVT: Unregistered Cyber-Doc "Fixer"</strong><br>
-                        Crime: Operating without medical license, smuggling weapons.<br>
-                        Bounty: 25,000 Credits. DEAD OR ALIVE, PREFERABLY DEAD.
+                        style="color: var(--panic-orange); margin-bottom: 15px; border-bottom: 1px solid var(--panic-orange); padding-bottom: 10px; text-shadow: 0 0 5px var(--panic-orange);">
+                        HIGH VALUE TARGETS - EXTREME PREJUDICE AUTHORIZED</h3>
+                    <div id="wanted-list" style="display: flex; flex-direction: column; gap: 10px;">
+                        <!-- Dynamic Wanted Targets Injected Here -->
                     </div>
                 </div>
 

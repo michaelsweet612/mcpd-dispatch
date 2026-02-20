@@ -25,6 +25,11 @@ const roeToggleCheckbox = document.getElementById('roe-toggle');
 const dispatchChatInput = document.getElementById('dispatch-chat-input');
 const dispatchChatSend = document.getElementById('dispatch-chat-send');
 
+const wantedListEl = document.getElementById('wanted-list');
+const dbSearchInput = document.getElementById('db-search-input');
+const dbSearchBtn = document.getElementById('db-search-btn');
+const dbResults = document.getElementById('db-results');
+
 // Global State
 let eventCount = 0;
 let activePanics = new Map(); // Store maps of unit -> { timeoutVisual, timeoutSound }
@@ -296,7 +301,7 @@ function simulateEvent(specificCrime = null) {
         <span class="time">${getCurrentTimeStr()}</span>
         <div class="title">${crime.title}</div>
         ${crime.group ? `<div style="color: #ff9800; font-size: 0.85rem;">[INTEL] Known Affiliation: ${crime.group}</div>` : ''}
-        <div style="font-size: 0.9rem; color: #ccc;">Responding: ${getRandomItem(callsigns)} & ${getRandomItem(callsigns)}</div>
+        <div style="font-size: 0.9rem; color: #ccc;">Responding: ${getRandomItem(getActiveCallsigns())} & ${getRandomItem(getActiveCallsigns())}</div>
     `;
 
     unifiedLogEl.appendChild(div);
@@ -664,6 +669,133 @@ autoSimulateInt = setInterval(() => {
         triggerPanic();
     }
 }, 7000); // every 7s, random event
+
+// --- Wanted Targets Logic ---
+const wantedCrimes = [
+    "Jaywalking, Resisting Arrest, Anti-Civil Behavior",
+    "Operating unlicensed cyber-clinic, Smuggling",
+    "Grand Theft Auto, Unsanctioned Weapon Modification",
+    "Accessing restricted MCPD network domains",
+    "Distribution of non-compliant food rations",
+    "Failure to relocate to assigned sector"
+];
+const wantedNames = ["Ghost", "Fixer", "Viper", "Deadeye", "Cipher", "Splicer", "Ronin"];
+
+function generateWantedTargets() {
+    wantedListEl.innerHTML = ''; // Clear existing
+
+    // Gordon Freeman ALWAYS at the top
+    const freemanDiv = document.createElement('div');
+    freemanDiv.style.cssText = "color: #ffd700; border-left: 3px solid #ffd700; padding-left: 10px; padding-bottom: 5px; margin-bottom: 15px; background: rgba(255, 215, 0, 0.05); cursor: pointer; transition: background 0.2s;";
+    freemanDiv.onmouseover = () => freemanDiv.style.background = "rgba(255, 215, 0, 0.15)";
+    freemanDiv.onmouseout = () => freemanDiv.style.background = "rgba(255, 215, 0, 0.05)";
+
+    freemanDiv.innerHTML = `
+        <strong>[PRIME MULTIVERSE TARGET] GORDON FREEMAN</strong><br>
+        Crime: Resonance Cascade, Assault on Overwatch, Anti-Civil Activity Level 1.<br>
+        Bounty: 9,236,000 Credits. EXTREME PREJUDICE MANDATORY.
+    `;
+    freemanDiv.addEventListener('click', () => {
+        openReportModal(`
+            <h3 style="color:#ffd700; border-bottom: 1px solid #ffd700; padding-bottom: 10px;">GORDON FREEMAN - THREAT LEVEL: KETER</h3>
+            <img src="https://upload.wikimedia.org/wikipedia/en/thumb/e/ef/Gordon_Freeman.png/220px-Gordon_Freeman.png" style="float: right; margin: 0 0 10px 10px; border: 1px solid #ffd700; max-width: 150px; display: none;" onload="this.style.display='block'" onerror="this.style.display='none'">
+            <strong>Known Aliases:</strong> Free Man, Anticitizen One<br>
+            <strong>Last Known Location:</strong> Sector 17 / Black Mesa East<br>
+            <strong>Weaponry:</strong> Anomalous Materials Crowbar, Zero-Point Energy Field Manipulator, Submachine Guns.<br><br>
+            <em>Directives:</em> Do not attempt to apprehend. Do not attempt vocal pacification. Deploy heavy synths immediately upon visual confirmation. <br><br>
+            <span style="color:var(--panic-red); font-weight: bold;">WARNING: Suspect is highly unpredictable and heavily armored (HEV Mark V).</span>
+        `);
+    });
+    wantedListEl.appendChild(freemanDiv);
+
+    // Generate 3 random targets
+    const shuffledNames = [...wantedNames].sort(() => 0.5 - Math.random());
+    for (let i = 0; i < 3; i++) {
+        const name = shuffledNames[i];
+        const crime = getRandomItem(wantedCrimes);
+        const bounty = Math.floor(Math.random() * 50000 + 10000);
+
+        const targetDiv = document.createElement('div');
+        const color = Math.random() > 0.5 ? 'var(--panic-red)' : 'var(--panic-orange)';
+        targetDiv.style.cssText = `color: ${color}; border-left: 3px solid ${color}; padding-left: 10px; padding-bottom: 5px; margin-bottom: 10px; background: rgba(255, 255, 255, 0.02); cursor: pointer; transition: background 0.2s;`;
+        targetDiv.onmouseover = () => targetDiv.style.background = "rgba(255, 255, 255, 0.08)";
+        targetDiv.onmouseout = () => targetDiv.style.background = "rgba(255, 255, 255, 0.02)";
+
+        targetDiv.innerHTML = `
+            <strong>HVT: "${name}"</strong><br>
+            Crime: ${crime}<br>
+            Bounty: ${bounty} Credits. DEAD OR ALIVE.
+        `;
+
+        targetDiv.addEventListener('click', () => {
+            openReportModal(`
+                <h3 style="color:${color}; border-bottom: 1px solid ${color}; padding-bottom: 10px;">HVT PROFILE: ${name}</h3>
+                <strong>Registered Address:</strong> Sector ${Math.floor(Math.random() * 20 + 1)}, Block ${Math.floor(Math.random() * 9 + 1)}<br>
+                <strong>License Status:</strong> REVOKED<br>
+                <strong>Cyberware Modifications:</strong> ${Math.random() > 0.5 ? 'Optical camo, Subdermal plating' : 'None detected'}<br><br>
+                <em>Actionable Intel:</em> Suspect is considered armed and dangerous. Lethal force authorized without prior warning.
+            `);
+        });
+        wantedListEl.appendChild(targetDiv);
+    }
+}
+
+// Update wanted targets every 45 seconds to keep it fresh
+setInterval(generateWantedTargets, 45000);
+generateWantedTargets(); // Initial call
+
+// --- Database Logic ---
+dbSearchBtn.addEventListener('click', () => {
+    const query = dbSearchInput.value.trim().toUpperCase();
+    dbResults.style.display = 'block';
+
+    if (!query) {
+        dbResults.innerHTML = '<span style="color:var(--panic-red);">ERROR: Invalid query string. Enter Citizen ID or Name.</span>';
+        return;
+    }
+
+    // Display simulated search progress
+    dbResults.innerHTML = `<div style="color:var(--text-dim);">[ SYSTEM STATUS ] Searching Central Citizen Database for "<span style="color:#fff;">${query}</span>"...</div>`;
+
+    setTimeout(() => {
+        // Special easter eggs
+        if (query.includes("GORDON") || query.includes("FREEMAN")) {
+            dbResults.innerHTML = `
+                <div style="color:var(--panic-red); border: 1px solid var(--panic-red); padding: 10px; background: rgba(255, 0, 0, 0.05);">
+                    <strong style="font-size: 1.2rem;">🚨 ALERT: KETER-LEVEL THREAT DETECTED 🚨</strong><br><br>
+                    <strong>QUERY:</strong> ${query}<br>
+                    <strong>STATUS:</strong> ACTIVE BOUNTY (9,236,000 CR)<br>
+                    <strong>RECOMMENDATION:</strong> EVACUATE SECTOR AND DEPLOY GUNSHIPS IMMEDIATELY.<br>
+                    <span style="font-size: 0.8rem; color:#aaa;">(Query logged. Overwatch has been notified of your location.)</span>
+                </div>
+             `;
+            return;
+        }
+
+        const isGuilty = Math.random() > 0.2; // 80% chance of being "guilty" of something (trigger-happy cops)
+        const infractions = isGuilty ? getRandomItem(wantedCrimes) : "None (Pending further intrusive investigation)";
+        const status = isGuilty ? "<span style='color:var(--panic-orange); font-weight:bold;'>WARRANT ISSUED</span>" : "<span style='color:var(--accent-green);'>CLEARED (TEMPORARILY)</span>";
+
+        dbResults.innerHTML = `
+            <div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                <strong style="color: var(--accent-blue);">CITIZEN RECORD RETRIEVED:</strong>
+            </div>
+            <div style="margin-bottom: 5px;"><strong>Name/ID:</strong> ${query}</div>
+            <div style="margin-bottom: 5px;"><strong>System Status:</strong> ${status}</div>
+            <div style="margin-bottom: 15px;"><strong>Known Infractions:</strong> <span style="color:#ccc;">${infractions}</span></div>
+            
+            <button class="doc-btn" style="width: 100%; border-color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'}; color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'};" onclick="alert('Dispatching units to citizen residence.')">DISPATCH PATROL TO RESIDENCE</button>
+            <br><br>
+            <em style="color:#aaa; font-size:0.85rem;">[Directive 4-A Applied: All citizens subject to random pacification patrols and warrantless search.]</em>
+        `;
+    }, 1200); // 1.2 second "search" delay for realism
+});
+
+dbSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+        dbSearchBtn.click();
+    }
+});
 
 // Initial messages to seed the UI
 setTimeout(simulateEvent, 500);
