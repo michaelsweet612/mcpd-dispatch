@@ -307,6 +307,29 @@ async function processDispatchChat() {
     const text = dispatchChatInput.value.trim();
     if (!text) return;
 
+    // Secret Mayhem Protocol
+    if (text === "10-999") {
+        dispatchChatInput.value = '';
+        addChatMessage('SYSTEM', 'PROTOCOL 8,997 IS NOW IN EFFECT. ALL OFFICERS ARE AUTHORIZED TO SHOOT EVERYONE.', 'worried');
+        dispatchChatInput.placeholder = "Reply STOP to stop the chaos";
+
+        // Trigger 15 panics rapidly
+        for (let i = 0; i < 15; i++) {
+            setTimeout(() => {
+                triggerPanic();
+            }, i * 200);
+        }
+        return;
+    }
+
+    if (text === "STOP") {
+        dispatchChatInput.value = '';
+        dispatchChatInput.placeholder = "Transmit to units...";
+        addChatMessage('SYSTEM', 'PROTOCOL 8,997 OVERRIDDEN. ALL UNITS STAND DOWN.', 'serious');
+        clearPanic();
+        return;
+    }
+
     // Immediately show dispatch message
     addChatMessage('DISPATCH', text, 'dispatch-msg');
     dispatchChatInput.value = '';
