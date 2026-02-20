@@ -492,3 +492,70 @@ button:active {
         box-shadow: inset 0 0 15px rgba(255, 145, 0, 0.5);
     }
 }
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    body {
+        padding: 5px;
+    }
+
+    header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+        padding: 10px;
+    }
+
+    .status-indicator {
+        margin-left: 0;
+    }
+
+    .grid-layout-new {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+
+    /* Stack panels vertically, limit their individual heights to allow page scrolling */
+    .panel {
+        min-height: 400px;
+        max-height: 60vh;
+    }
+
+    /* Wrap tabs to prevent horizontal overflow */
+    .tab-header {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px;
+    }
+
+    .tab {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Roster flex adjustments for small screens */
+    .roster-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .roster-actions {
+        width: 100%;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+
+    .roster-btn {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Modal padding adjustments */
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+}
