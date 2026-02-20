@@ -22,6 +22,14 @@ const btnEvtTraffic = document.getElementById('manual-event-traffic');
 const btnEvtRandom = document.getElementById('manual-event-random');
 const autoEventsCheckbox = document.getElementById('auto-events');
 const roeToggleCheckbox = document.getElementById('roe-toggle');
+const restModeToggle = document.getElementById('rest-mode-toggle');
+const autoHireToggle = document.getElementById('auto-hire-toggle');
+const btnArrestNearby = document.getElementById('btn-arrest-nearby');
+
+// Advanced Controls UI
+const advancedControlsHeader = document.getElementById('advanced-controls-header');
+const advancedControlsBody = document.getElementById('advanced-controls-body');
+const advancedChevron = document.getElementById('advanced-chevron');
 const dispatchChatInput = document.getElementById('dispatch-chat-input');
 const dispatchChatSend = document.getElementById('dispatch-chat-send');
 
@@ -254,6 +262,7 @@ function getCurrentTimeStr() {
 
 // Emulate Incoming Chat
 function simulateChat() {
+    if (restModeToggle.checked) return; // Pause all activity if rest mode is on
     if (!autoEventsCheckbox.checked) return;
 
     let msgTypeClass = '';
@@ -339,6 +348,8 @@ function processDispatchChat() {
 
 // Emulate Dispatch Event
 function simulateEvent(specificCrime = null) {
+    if (restModeToggle.checked && !specificCrime) return; // Pause all auto events if rest mode is on
+
     let crime = specificCrime;
     if (!crime) {
         if (!autoEventsCheckbox.checked) return;
@@ -576,11 +587,22 @@ function clearPanic() {
 }
 
 // Event Listeners
+advancedControlsHeader.addEventListener('click', () => {
+    if (advancedControlsBody.style.display === 'none') {
+        advancedControlsBody.style.display = 'block';
+        advancedChevron.textContent = '▲';
+    } else {
+        advancedControlsBody.style.display = 'none';
+        advancedChevron.textContent = '▼';
+    }
+});
+
 manualPanicBtn.addEventListener('click', () => triggerPanic());
 btnEvtRobbery.addEventListener('click', () => simulateEvent(crimeReports.find(c => c.title.includes("Robbery"))));
 btnEvtSuspicious.addEventListener('click', () => simulateEvent(crimeReports.find(c => c.title.includes("Suspicious"))));
 btnEvtTraffic.addEventListener('click', () => simulateEvent({ title: "10-50: Traffic Stop", priority: "medium" }));
 btnEvtRandom.addEventListener('click', () => simulateEvent());
+btnArrestNearby.addEventListener('click', () => simulateEvent({ title: "10-15: Arrest Nearby Suspect", priority: "low", group: "Local vagrants" }));
 clearPanicBtn.addEventListener('click', () => clearPanic());
 
 dispatchChatSend.addEventListener('click', processDispatchChat);
@@ -598,11 +620,22 @@ dispatchChatInput.addEventListener('focus', () => {
 const tabDatabase = document.getElementById('tab-database');
 const tabWanted = document.getElementById('tab-wanted');
 const tabPersonnel = document.getElementById('tab-personnel');
+const tabCitizens = document.getElementById('tab-citizens');
 const databaseLogEl = document.getElementById('database-log');
 const wantedLogEl = document.getElementById('wanted-log');
 const personnelLogEl = document.getElementById('personnel-log');
+const citizensLogEl = document.getElementById('citizens-log');
 const rosterListEl = document.getElementById('roster-list');
 const recruitBtn = document.getElementById('recruit-btn');
+
+// Citizen Modal Elements
+const citizenModal = document.getElementById('citizen-modal');
+const citizenModalTitle = document.getElementById('citizen-modal-title');
+const citizenModalBody = document.getElementById('citizen-modal-body');
+const btnDeclareInnocent = document.getElementById('btn-declare-innocent');
+const btnDeclareSuspicious = document.getElementById('btn-declare-suspicious');
+const btnDeclareWanted = document.getElementById('btn-declare-wanted');
+const citizensListEl = document.getElementById('citizens-list');
 
 function hideAllTabs() {
     tabUnified.classList.remove('active');
@@ -615,6 +648,8 @@ function hideAllTabs() {
     tabWanted.style.color = 'var(--text-dim)';
     tabPersonnel.classList.remove('active');
     tabPersonnel.style.color = 'var(--text-dim)';
+    tabCitizens.classList.remove('active');
+    tabCitizens.style.color = 'var(--text-dim)';
 
     unifiedLogEl.style.display = 'none';
     chatInputArea.style.display = 'none';
@@ -622,6 +657,7 @@ function hideAllTabs() {
     databaseLogEl.style.display = 'none';
     wantedLogEl.style.display = 'none';
     personnelLogEl.style.display = 'none';
+    citizensLogEl.style.display = 'none';
 }
 
 tabUnified.addEventListener('click', () => {
@@ -659,6 +695,13 @@ tabPersonnel.addEventListener('click', () => {
     tabPersonnel.style.color = 'var(--text-main)';
     personnelLogEl.style.display = 'block';
     renderRoster();
+});
+
+tabCitizens.addEventListener('click', () => {
+    hideAllTabs();
+    tabCitizens.classList.add('active');
+    tabCitizens.style.color = 'var(--text-main)';
+    citizensLogEl.style.display = 'block';
 });
 
 // Personnel & PM Logic
@@ -710,11 +753,26 @@ function renderRoster() {
     }));
 }
 
-recruitBtn.addEventListener('click', () => {
-    const newId = 'Unit-' + Math.floor(Math.random() * 90000 + 10000);
+// Recruit Logic
+recruitBtn.addEventListener('click', hireOfficer);
+
+function hireOfficer() {
+    const newId = `Unit-${Math.floor(10000 + Math.random() * 90000)}`;
     roster.push({ id: newId, status: 'On Duty' });
     renderRoster();
-});
+}
+
+// Auto-Hire Logic loop
+setInterval(() => {
+    if (autoHireToggle.checked && !restModeToggle.checked) {
+        hireOfficer();
+        // Give visual confirmation in the chat
+        addChatMessage('DISPATCH', `AUTOMATED MESSAGE: Newly trained unit has joined the active roster.`, 'dispatch-msg');
+    }
+}, 60000); // Check every 60 seconds
+
+// Initial render
+renderRoster();
 
 let currentPMUnit = null;
 const pmModal = document.getElementById('pm-modal');
@@ -750,7 +808,123 @@ function sendPM() {
 pmSendBtn.addEventListener('click', sendPM);
 pmInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendPM(); });
 
+
+// -----------------------------------------------------
+// CITIZENS DIRECTORY LOGIC
+// -----------------------------------------------------
+
+let globalCitizens = [];
+let currentViewingCitizen = null;
+
+const INNOCENT_COLOR = "var(--accent-green)";
+const SUSPICIOUS_COLOR = "var(--panic-orange)";
+const WANTED_COLOR = "var(--panic-red)";
+
+function generateCitizens() {
+    const firstNames = ["James", "Mary", "John", "Patricia", "Robert", "Jennifer", "Michael", "Linda", "William", "Elizabeth", "David", "Barbara", "Richard", "Susan", "Joseph", "Jessica", "Thomas", "Sarah", "Charles", "Karen", "Elena", "Marcus", "Sophia", "Viktor", "Aaliyah", "Desmond", "Fiona", "Gideon", "Haley", "Ivan", "Jocelyn", "Kael", "Lana", "Malik", "Nia", "Orion", "Penelope", "Quinn", "Rowan", "Serena", "Tariq", "Uma", "Vance", "Wren", "Xavier", "Yara", "Zane"];
+    const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Martinez", "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Chen", "Lee", "Kim", "Patel", "Singh", "Nguyen", "Ali", "Hassan", "Kovacs", "Novak", "Silva", "Costa", "Rossi", "Conti", "Dubois", "Lefevre", "Muller", "Schmidt", "Ivanov", "Sokolov", "Gomez", "Ruiz", "Tanaka", "Yamamoto", "Okafor", "Adebayo", "Cohen", "Levi"];
+    const traits = ["No known modifications.", "Optical cyberware detected.", "Sub-dermal armor present.", "Neural link active.", "Prosthetic limb (Left Arm).", "Prosthetic limb (Right Leg).", "Voice modulator installed.", "No prior record.", "Known associate of local gangs.", "Frequent traveler to off-world colonies.", "Employed at Tyrell Corporation.", "Unemployed.", "Student at City University.", "Works in Sector 4 Industrial Zone."];
+
+    for (let i = 0; i < 1000; i++) {
+        const first = getRandomItem(firstNames);
+        const last = getRandomItem(lastNames);
+        const randId = `CID-${Math.floor(Math.random() * 900000) + 100000}`;
+
+        globalCitizens.push({
+            id: randId,
+            name: `${first} ${last}`,
+            status: 'Innocent', // Default
+            trait: getRandomItem(traits),
+            dob: `20${Math.floor(Math.random() * 80) + 10}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}` // Random DOB between 2010 and 2089
+        });
+    }
+}
+
+function renderCitizensList() {
+    // Only render a chunk to not kill the dom, or just render all 1000
+    // 1000 divs is usually okay for modern browsers, but let's be efficient.
+    let htmlChunk = '';
+
+    globalCitizens.forEach((cit, idx) => {
+        let color = INNOCENT_COLOR;
+        if (cit.status === 'Suspicious') color = SUSPICIOUS_COLOR;
+        if (cit.status === 'Wanted') color = WANTED_COLOR;
+
+        htmlChunk += `
+            <div class="roster-card" onclick="openCitizenModal(${idx})" style="cursor:pointer; border-color: ${color};">
+                <div class="roster-info">
+                    <span class="roster-id">${cit.id}</span>
+                    <span class="roster-status" style="color:${color};text-transform:uppercase;">${cit.status}</span>
+                </div>
+                <div style="font-size: 1.1rem; color: #fff; margin-top: 5px;">${cit.name}</div>
+            </div>
+        `;
+    });
+
+    citizensListEl.innerHTML = htmlChunk;
+}
+
+function openCitizenModal(idx) {
+    currentViewingCitizen = idx;
+    const cit = globalCitizens[idx];
+
+    let color = INNOCENT_COLOR;
+    if (cit.status === 'Suspicious') color = SUSPICIOUS_COLOR;
+    if (cit.status === 'Wanted') color = WANTED_COLOR;
+
+    citizenModalTitle.textContent = `DOSSIER: ${cit.id}`;
+    citizenModalTitle.style.color = color;
+    citizenModalTitle.style.textShadow = `0 0 5px ${color}`;
+
+    citizenModalBody.innerHTML = `
+        <div style="font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
+            ${cit.name}
+        </div>
+        <div><strong>DOB:</strong> ${cit.dob}</div>
+        <div><strong>Standing:</strong> <span style="color:${color};text-transform:uppercase;">${cit.status}</span></div>
+        <div style="margin-top: 15px;"><strong>Notes:</strong><br>${cit.trait}</div>
+        <div style="margin-top: 15px; color: var(--text-dim); font-size: 0.85rem; border-top: 1px dashed var(--border-color); padding-top: 10px;">
+            WARNING: Falsifying citizen records is a Class A Felony. Authorized personnel only.
+        </div>
+    `;
+
+    citizenModal.style.border = `1px solid ${color}`;
+    citizenModal.style.display = 'flex';
+}
+
+btnDeclareInnocent.addEventListener('click', () => updateCitizenStatus('Innocent'));
+btnDeclareSuspicious.addEventListener('click', () => updateCitizenStatus('Suspicious'));
+btnDeclareWanted.addEventListener('click', () => updateCitizenStatus('Wanted'));
+
+function updateCitizenStatus(newStatus) {
+    if (currentViewingCitizen === null) return;
+
+    const cit = globalCitizens[currentViewingCitizen];
+    cit.status = newStatus;
+
+    // Add logic if Wanted
+    if (newStatus === 'Wanted') {
+        const wantedData = {
+            name: cit.name,
+            reason: "Declared Wanted via Citizen Directory",
+            level: "HIGH",
+            bounty: Math.floor(Math.random() * 50000) + 10000,
+            address: "Unknown",
+            implants: cit.trait
+        };
+        wantedTargets.push(wantedData);
+        updateWantedUI();
+        addChatMessage('DISPATCH', `ALL UNITS: BOLO issued for ${cit.name} (${cit.id}). Target added to active Wanted List.`, 'dispatch-msg');
+    }
+
+    citizenModal.style.display = 'none';
+    renderCitizensList(); // Re-render to reflect color changes
+}
+
 // Start Simulations
+// Initialize Citizens
+generateCitizens();
+renderCitizensList();
 chatSimulateInt = setInterval(simulateChat, 3000); // every 3s, random chat
 autoSimulateInt = setInterval(() => {
     simulateEvent();
