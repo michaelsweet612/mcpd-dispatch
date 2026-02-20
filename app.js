@@ -2,8 +2,9 @@
 
 // Setup Audio Context for procedural synthetic sound (Panic Alarm)
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-let panicOscillator = null;
-let panicInterval = null;
+let panicOsc = null;
+let panicLFO = null;
+let panicGain = null;
 
 // DOM Elements
 const timeEl = document.getElementById('current-time');
@@ -469,36 +470,52 @@ window.openReportModal = function (reportHTML) {
 function playPanicSound() {
     if (audioCtx.state === 'suspended') audioCtx.resume();
 
-    const playTone = () => {
-        const osc = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
+    // Prevent multiple overlapping sirens
+    if (panicOsc) return;
 
-        osc.type = 'sawtooth';
-        // Alternating high-low tone for panic
-        osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-        osc.frequency.setValueAtTime(1200, audioCtx.currentTime + 0.2);
+    panicOsc = audioCtx.createOscillator();
+    panicLFO = audioCtx.createOscillator();
+    panicGain = audioCtx.createGain();
 
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.3, audioCtx.currentTime + 0.05);
-        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+    // Main tone - Sawtooth is harsh/brassy like a siren
+    panicOsc.type = 'sawtooth';
+    panicOsc.frequency.value = 750; // Base frequency
 
-        osc.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
+    // LFO to modulate the pitch (Hi-Lo European style oscillation)
+    panicLFO.type = 'square';
+    panicLFO.frequency.value = 2.5; // ~2.5 Hz oscillation
 
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
-    };
+    // Gain node to control modulation depth
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 250; // Modulates +/- 250 Hz (from 500Hz to 1000Hz)
 
-    // Play dual-tone every second
-    if (panicInterval) clearInterval(panicInterval);
-    playTone();
-    panicInterval = setInterval(playTone, 800);
+    panicLFO.connect(lfoGain);
+    lfoGain.connect(panicOsc.frequency); // Modulates the pitch of panicOsc
+
+    // Main volume control
+    panicGain.gain.value = 0.3; // Loud enough but not deafening
+
+    panicOsc.connect(panicGain);
+    panicGain.connect(audioCtx.destination);
+
+    panicOsc.start();
+    panicLFO.start();
 }
 
 function stopPanicSound() {
-    if (panicInterval) {
-        clearInterval(panicInterval);
-        panicInterval = null;
+    if (panicOsc) {
+        panicOsc.stop();
+        panicOsc.disconnect();
+        panicOsc = null;
+    }
+    if (panicLFO) {
+        panicLFO.stop();
+        panicLFO.disconnect();
+        panicLFO = null;
+    }
+    if (panicGain) {
+        panicGain.disconnect();
+        panicGain = null;
     }
 }
 
