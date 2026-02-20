@@ -21,6 +21,7 @@ const btnEvtSuspicious = document.getElementById('manual-event-suspicious');
 const btnEvtTraffic = document.getElementById('manual-event-traffic');
 const btnEvtRandom = document.getElementById('manual-event-random');
 const autoEventsCheckbox = document.getElementById('auto-events');
+const roeToggleCheckbox = document.getElementById('roe-toggle');
 const dispatchChatInput = document.getElementById('dispatch-chat-input');
 const dispatchChatSend = document.getElementById('dispatch-chat-send');
 
@@ -315,16 +316,29 @@ function mockAddDocument(crime) {
     const doc = document.createElement('div');
     doc.className = "document-card";
 
-    // Generate some fake report text
-    const suspectStatus = (crime.priority === 'high') ? "Suspect neutralized via lethal force." : "Suspect apprehended after significant struggle and tasering.";
+    // Determine suspect outcome based on the new ROE toggle
+    const isROEEnabled = roeToggleCheckbox.checked;
+    let suspectStatus = "";
+
+    if (isROEEnabled) {
+        // ROE ON: Less lethal force, suspects generally survive
+        suspectStatus = (crime.priority === 'high') ?
+            "Suspect apprehended after significant struggle and non-lethal tasering. Medical requested for minor injuries." :
+            "Suspect complied with verbal commands and was detained without incident.";
+    } else {
+        // ROE OFF: Trigger-happy, highly lethal
+        suspectStatus = (crime.priority === 'high') ?
+            "Suspect neutralized via lethal force. Multiple traumatic injuries sustained." :
+            "Suspect resisted pacification. Lethal force authorized and deployed. Suspect deceased on scene.";
+    }
+
     const fullReport = `INCIDENT TYPE: ${crime.title}
 TIME FILED: ${getCurrentTimeStr()}
 RESPONDING OFFICERS: ${getRandomItem(getActiveCallsigns())}, ${getRandomItem(getActiveCallsigns())}
 ${crime.group ? "GANG AFFILIATION: " + crime.group + "<br>" : ""}
 -- NARRATIVE --<br>
-Responding officers arrived at the scene. Suspect immediately became uncooperative and displayed hostile intent. Officers deployed standard MCPD pacification protocols (excessive force authorized). ${suspectStatus}<br><br>
-Multiple shell casings recovered from officer firearms. No civilian casualties reported (acceptable collateral damage parameters met).<br><br>
-Requesting bio-hazard cleanup crew to the coordinates for bodily fluid removal.`;
+Responding officers arrived at the scene. ${isROEEnabled ? "Officers followed standard engagement rules." : "Officers deployed standard pacification protocols (excessive force authorized)."} ${suspectStatus}<br><br>
+${isROEEnabled ? "Civilian area secured. Suspect transported to booking." : "Multiple shell casings recovered from officer firearms. Requesting bio-hazard cleanup crew to the coordinates for bodily fluid removal."}`;
 
     doc.innerHTML = `
         <div class="doc-header">REPORT: ${crime.title}</div>
