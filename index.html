@@ -184,18 +184,49 @@
 
                 <!-- CITIZENS VIEW (Hidden by default) -->
                 <div class="panel-content scrollable" id="citizens-log"
-                    style="flex: 1; margin-bottom: 10px; display: none;">
-                    <h3
-                        style="color: var(--accent-green); margin-bottom: 15px; border-bottom: 1px solid var(--accent-green); padding-bottom: 10px; text-shadow: 0 0 5px var(--accent-green);">
-                        MEGACITY CITIZEN REGISTER</h3>
-                    <div style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">
-                        Total Indexed Citizens: 1,000<br>
-                        <em>Use this interface to officially declare citizen standing.</em>
+                    style="flex: 1; margin-bottom: 10px; display: none; position: relative;">
+
+                    <!-- NEW WRAPPER FOR LIST -->
+                    <div id="citizens-list-view">
+                        <h3
+                            style="color: var(--accent-green); margin-bottom: 15px; border-bottom: 1px solid var(--accent-green); padding-bottom: 10px; text-shadow: 0 0 5px var(--accent-green);">
+                            MEGACITY CITIZEN REGISTER</h3>
+                        <div style="color: #aaa; margin-bottom: 15px; font-size: 0.9rem;">
+                            Total Indexed Citizens: 1,000<br>
+                            <em>Use this interface to officially declare citizen standing.</em>
+                        </div>
+
+                        <div id="citizens-list"
+                            style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
+                            <!-- 1000 dynamically generated citizens go here -->
+                        </div>
                     </div>
 
-                    <div id="citizens-list"
-                        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 10px;">
-                        <!-- 1000 dynamically generated citizens go here -->
+                    <!-- FULL PAGE VIEW FOR CITIZEN DOSSIER -->
+                    <div id="citizen-dossier-view" style="display: none; height: 100%; flex-direction: column;">
+                        <div
+                            style="border-bottom: 1px solid var(--accent-green); display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; margin-bottom: 15px;">
+                            <h2 id="citizen-page-title"
+                                style="color: var(--accent-green); margin:0; text-shadow: 0 0 5px var(--accent-green);">
+                                CITIZEN DOSSIER</h2>
+                            <button id="btn-close-dossier"
+                                style="border: none; background: transparent; color: var(--panic-red); font-size: 1.5rem; cursor: pointer;">[X]</button>
+                        </div>
+                        <div id="citizen-page-body" style="color: #ccc; line-height: 1.6; flex: 1; overflow-y: auto;">
+                            <!-- Citizen Details injected here -->
+                        </div>
+                        <div
+                            style="padding-top: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 10px; margin-top: 15px;">
+                            <button id="btn-declare-innocent-page"
+                                style="border-color: var(--accent-green); color: var(--accent-green); flex: 1; padding: 10px;">DECLARE
+                                INNOCENT</button>
+                            <button id="btn-declare-suspicious-page"
+                                style="border-color: var(--panic-orange); color: var(--panic-orange); flex: 1; padding: 10px;">DECLARE
+                                SUSPICIOUS</button>
+                            <button id="btn-declare-wanted-page"
+                                style="border-color: var(--panic-red); color: var(--panic-red); flex: 1; font-weight: bold; padding: 10px;">DECLARE
+                                WANTED</button>
+                        </div>
                     </div>
                 </div>
 
@@ -252,35 +283,6 @@
                         style="flex: 1; background: rgba(0,0,0,0.8); border: 1px solid var(--border-color); color: #fff; padding: 8px; font-family: inherit;">
                     <button id="pm-send-btn"
                         style="border-color: var(--accent-blue); color: var(--accent-blue);">SEND</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- CITIZEN PROFILE MODAL -->
-        <div id="citizen-modal" class="modal-overlay" style="display: none;">
-            <div class="modal-content" style="max-width: 600px; border-color: var(--accent-green);">
-                <div class="modal-header" style="border-bottom: 1px solid var(--accent-green);">
-                    <h2 id="citizen-modal-title"
-                        style="color: var(--accent-green); text-shadow: 0 0 5px var(--accent-green);">
-                        CITIZEN DOSSIER</h2>
-                    <button class="modal-close-btn"
-                        style="border: none; background: transparent; color: var(--panic-red); font-size: 1.5rem; cursor: pointer;"
-                        onclick="document.getElementById('citizen-modal').style.display='none'">[X]</button>
-                </div>
-                <div class="modal-body" id="citizen-modal-body" style="padding: 20px; color: #ccc; line-height: 1.6;">
-                    <!-- Citizen Details injected here -->
-                </div>
-                <div class="modal-footer"
-                    style="padding: 15px; border-top: 1px solid var(--border-color); display: flex; justify-content: space-between; gap: 10px;">
-                    <button id="btn-declare-innocent"
-                        style="border-color: var(--accent-green); color: var(--accent-green); flex: 1;">DECLARE
-                        INNOCENT</button>
-                    <button id="btn-declare-suspicious"
-                        style="border-color: var(--panic-orange); color: var(--panic-orange); flex: 1;">DECLARE
-                        SUSPICIOUS</button>
-                    <button id="btn-declare-wanted"
-                        style="border-color: var(--panic-red); color: var(--panic-red); flex: 1; font-weight: bold;">DECLARE
-                        WANTED</button>
                 </div>
             </div>
         </div>

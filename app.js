@@ -627,13 +627,15 @@ const citizensLogEl = document.getElementById('citizens-log');
 const rosterListEl = document.getElementById('roster-list');
 const recruitBtn = document.getElementById('recruit-btn');
 
-// Citizen Modal Elements
-const citizenModal = document.getElementById('citizen-modal');
-const citizenModalTitle = document.getElementById('citizen-modal-title');
-const citizenModalBody = document.getElementById('citizen-modal-body');
-const btnDeclareInnocent = document.getElementById('btn-declare-innocent');
-const btnDeclareSuspicious = document.getElementById('btn-declare-suspicious');
-const btnDeclareWanted = document.getElementById('btn-declare-wanted');
+// Citizen Page Elements
+const citizenListView = document.getElementById('citizens-list-view');
+const citizenDossierView = document.getElementById('citizen-dossier-view');
+const citizenPageTitle = document.getElementById('citizen-page-title');
+const citizenPageBody = document.getElementById('citizen-page-body');
+const btnCloseDossier = document.getElementById('btn-close-dossier');
+const btnDeclareInnocent = document.getElementById('btn-declare-innocent-page');
+const btnDeclareSuspicious = document.getElementById('btn-declare-suspicious-page');
+const btnDeclareWanted = document.getElementById('btn-declare-wanted-page');
 const citizensListEl = document.getElementById('citizens-list');
 
 function hideAllTabs() {
@@ -701,6 +703,8 @@ tabCitizens.addEventListener('click', () => {
     tabCitizens.classList.add('active');
     tabCitizens.style.color = 'var(--text-main)';
     citizensLogEl.style.display = 'block';
+    if (citizenDossierView) citizenDossierView.style.display = 'none';
+    if (citizenListView) citizenListView.style.display = 'block';
 });
 
 // Personnel & PM Logic
@@ -747,8 +751,10 @@ function renderRoster() {
     }));
 
     document.querySelectorAll('.pm-unit').forEach(btn => btn.addEventListener('click', (e) => {
-        const idx = e.target.getAttribute('data-idx');
-        openPM(roster[idx].id);
+        const idx = btn.getAttribute('data-idx');
+        if (idx !== null && roster[idx]) {
+            openPM(roster[idx].id);
+        }
     }));
 }
 
@@ -878,7 +884,7 @@ function renderCitizensList() {
         if (cit.status === 'Wanted') color = WANTED_COLOR;
 
         htmlChunk += `
-            <div class="roster-card" onclick="openCitizenModal(${idx})" style="cursor:pointer; border-color: ${color};">
+            <div class="roster-card" onclick="openCitizenDossier(${idx})" style="cursor:pointer; border-color: ${color};">
                 <div class="roster-info">
                     <span class="roster-id">${cit.id}</span>
                     <span class="roster-status" style="color:${color};text-transform:uppercase;">${cit.status}</span>
@@ -891,7 +897,7 @@ function renderCitizensList() {
     citizensListEl.innerHTML = htmlChunk;
 }
 
-function openCitizenModal(idx) {
+function openCitizenDossier(idx) {
     currentViewingCitizen = idx;
     const cit = globalCitizens[idx];
 
@@ -899,11 +905,11 @@ function openCitizenModal(idx) {
     if (cit.status === 'Suspicious') color = SUSPICIOUS_COLOR;
     if (cit.status === 'Wanted') color = WANTED_COLOR;
 
-    citizenModalTitle.textContent = `DOSSIER: ${cit.id}`;
-    citizenModalTitle.style.color = color;
-    citizenModalTitle.style.textShadow = `0 0 5px ${color}`;
+    citizenPageTitle.textContent = `DOSSIER: ${cit.id}`;
+    citizenPageTitle.style.color = color;
+    citizenPageTitle.style.textShadow = `0 0 5px ${color}`;
 
-    citizenModalBody.innerHTML = `
+    citizenPageBody.innerHTML = `
         <div style="font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
             ${cit.name}
         </div>
@@ -915,9 +921,15 @@ function openCitizenModal(idx) {
         </div>
     `;
 
-    citizenModal.style.border = `1px solid ${color}`;
-    citizenModal.style.display = 'flex';
+    citizenListView.style.display = 'none';
+    citizenDossierView.style.display = 'flex';
 }
+
+function closeDossier() {
+    citizenDossierView.style.display = 'none';
+    citizenListView.style.display = 'block';
+}
+btnCloseDossier.addEventListener('click', closeDossier);
 
 btnDeclareInnocent.addEventListener('click', () => updateCitizenStatus('Innocent'));
 btnDeclareSuspicious.addEventListener('click', () => updateCitizenStatus('Suspicious'));
@@ -944,7 +956,7 @@ function updateCitizenStatus(newStatus) {
         addChatMessage('DISPATCH', `ALL UNITS: BOLO issued for ${cit.name} (${cit.id}). Target added to active Wanted List.`, 'dispatch-msg');
     }
 
-    citizenModal.style.display = 'none';
+    closeDossier();
     renderCitizensList(); // Re-render to reflect color changes
 }
 
