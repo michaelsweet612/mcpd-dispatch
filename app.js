@@ -229,6 +229,114 @@ const reactionCrazyChats = [
     "Dispatch, is this a loyalty test? Because I'll shoot whoever you want."
 ];
 
+const voreChats = [
+    "Dispatch... what is happening? The walls are breathing.",
+    "I don't feel safe out here anymore. Something is hunting us.",
+    "Did anyone just see the sky blink?",
+    "My cruiser's dashboard is melting... or am I going crazy?",
+    "I need backup! Not for criminals... for the shadows. They're moving.",
+    "Dispatch, my reflection in the mirror just smiled at me. I'm leaving.",
+    "Is anyone else hearing that low hum? It's inside my skull.",
+    "I swear the pavement just swallowed a stray dog.",
+    "I want to go home, Dispatch. Please let us go home.",
+    "They told us we'd be protecting the city. They didn't tell us from what.",
+    "I'm locking myself in the trunk. Do not send anyone.",
+    "The streetlights are all pointing at me.",
+    "My sidearm just whispered my name.",
+    "There are teeth in the concrete. Huge teeth.",
+    "I'm staring into the alleyway and it's staring back.",
+    "Dispatch, please wake me up. I know this is a dream. Wake me up!",
+    "The rain smells like copper today.",
+    "I just saw my own corpse walking down 4th street.",
+    "Something is under the city. It's waking up.",
+    "My partner vanished when I blinked.",
+    "I'm not shooting anyone. I don't want to make it angry.",
+    "Every civilian face is completely blank. No eyes. No mouths.",
+    "The radio static sounds like screaming... is that you, Dispatch?",
+    "I can't remember my own name anymore. Where am I?",
+    "Did the sun just turn black?",
+    "We are not in control. We never were.",
+    "I found a door in the middle of the street. It's open.",
+    "Gravity feels... optional right now.",
+    "They're coming from the sewers. Millions of them. But they look like us.",
+    "I just arrested a shadow. My cuffs went right through it.",
+    "Who is Gordon Freeman? Why does my brain hurt when I say it?",
+    "My blood is turning cold. I think I died yesterday.",
+    "I beg you, send an extraction team! But don't let them look at the sky!",
+    "The neon signs are spelling out my sins.",
+    "I'm hiding under the cruiser. Tell my family to forget me.",
+    "My weapon is useless against this.",
+    "I fired a full mag into it... it just absorbed the bullets.",
+    "We breached the apartment, but the geometry inside is all wrong. Endless hallways.",
+    "There's a knock on the patrol car window. But I'm parked on a bridge. Over the water.",
+    "The sirens sound like laughing.",
+    "I'm taking off my badge. This is not our city anymore.",
+    "The birds. Look at the birds. They're completely frozen in mid-air.",
+    "I tried to run, but everywhere I go, I end up back here.",
+    "It's too quiet. Even the wind stopped.",
+    "My heart isn't beating, Dispatch. I checked three times.",
+    "We're just food. That's all we are.",
+    "The buildings are leaning over, trying to crush us.",
+    "I can hear the city thinking.",
+    "Don't trust unit 47. He has entirely too many joints in his arms now.",
+    "I'm dropping my weapon and walking into the fog. Good luck."
+];
+
+const greetingChats = [
+    "Hey! Anyone want to grab coffee near Sector 4?",
+    "Yo, how's the patrol going?",
+    "Just clocked in. What did I miss?",
+    "Sup guys, another beautiful day in the dystopia.",
+    "Hello from the east district. Quiet tonight.",
+    "Greetings, fellow enforcers.",
+    "Hey! Stop hogging the radio.",
+    "Anyone got eyes on that stolen hover-car?",
+    "Morning! If you can call it morning through the smog.",
+    "Howdy! Watch out for the potholes on 9th ave.",
+    "Hey man, I heard you got promoted!",
+    "Yo! Just got a fresh supply of stun batons.",
+    "Hello everyone! Keep your heads down today.",
+    "Hey! Need backup over here just to eat my donut in peace.",
+    "Sup! Did you finish that paperwork from yesterday?",
+    "Greetings from the holding cells. It's loud in here.",
+    "Hey, buddy! Long time no see on the dispatch channel.",
+    "Yo! Who's buying lunch today?",
+    "Hi guys! Stay alert out there.",
+    "Hey! My cruiser's AC is broken again.",
+    "Sup! Just chasing down some petty thieves.",
+    "Hello! Anybody else bored out of their mind?",
+    "Hey man, watch your six in the industrial zone.",
+    "Yo! Let's wrap this shift up quick.",
+    "Hi! Checking in from the rooftop patrol.",
+    "Hey! Have you seen the new rookie? Absolute mess.",
+    "Sup! I need a coffee IV drip right now.",
+    "Hello from the traffic division! Send help, it's terrible.",
+    "Hey! Don't let the captain catch you sleeping.",
+    "Yo! What's the bounty on Freeman up to now?",
+    "Hi guys, keep the chatter down, I have a headache.",
+    "Hey! Anyone want to swap shifts on Friday?",
+    "Sup! Just cleared a squatter camp.",
+    "Hello! This radio is full of static.",
+    "Hey man, keep your vest tight.",
+    "Yo! First one back to the precinct wins a prize.",
+    "Hi! My taser is acting up today.",
+    "Hey! Let's go bust some skulls.",
+    "Sup! Anyone else feel like we're just pawns in a simulation?",
+    "Hello! Ready for some action.",
+    "Hey! Got my eyes peeled.",
+    "Yo! Check out the cyberware on that guy.",
+    "Hi! Reporting for duty.",
+    "Hey! Let's make this city safe.",
+    "Sup! Another day, another dollar... wait, we use credits.",
+    "Hello! Stay safe out there.",
+    "Hey! Keep your comms linked.",
+    "Yo! See you at the briefing.",
+    "Hi! Over and out for a coffee break.",
+    "Hey! Good luck on patrol."
+];
+
+let voreMode = false;
+
 const crimeReports = [
     { title: "10-24: Abandoned Vehicle", priority: "low" },
     { title: "10-31: Crime In Progress - Robbery", priority: "high", group: "Downtown Syndicate" },
@@ -268,31 +376,70 @@ function simulateChat() {
 
     let msgTypeClass = '';
     let msgText = '';
+    const sender = getRandomItem(getActiveCallsigns());
+    let replyTo = null;
 
-    // Check if there are 5 or more active panics
-    if (activePanics.size >= 5) {
+    if (voreMode) {
         msgTypeClass = 'worried';
-        msgText = getRandomItem(worriedChats);
+        msgText = getRandomItem(voreChats);
     } else {
-        // 30% chance of a joke, 70% chance of serious
-        const isJoke = Math.random() < 0.3;
-        msgTypeClass = isJoke ? 'joking' : 'serious';
-        msgText = isJoke ? getRandomItem(jokes) : getRandomItem(seriousChats);
+        // Check if there are 5 or more active panics
+        if (activePanics.size >= 5) {
+            msgTypeClass = 'worried';
+            msgText = getRandomItem(worriedChats);
+        } else {
+            // Options: joke, serious, or greeting/reply
+            const rand = Math.random();
+            if (rand < 0.2) {
+                // 20% chance to be a greeting/reply to someone else
+                msgTypeClass = 'joking';
+                msgText = getRandomItem(greetingChats);
+
+                // Try to find another active unit to reply to
+                const active = getActiveCallsigns().filter(u => u !== sender);
+                if (active.length > 0) {
+                    replyTo = getRandomItem(active);
+                    msgText = `@${replyTo} ${msgText}`;
+                }
+            } else if (rand < 0.5) {
+                // 30% joke
+                msgTypeClass = 'joking';
+                msgText = getRandomItem(jokes);
+            } else {
+                // 50% serious
+                msgTypeClass = 'serious';
+                msgText = getRandomItem(seriousChats);
+            }
+        }
     }
 
-    const sender = getRandomItem(getActiveCallsigns());
-
-    addChatMessage(sender, msgText, msgTypeClass);
+    addChatMessage(sender, msgText, msgTypeClass, false);
 }
 
-function addChatMessage(sender, text, typeClass = 'serious') {
+function addChatMessage(sender, text, typeClass = 'serious', isPlayer = false) {
     const div = document.createElement('div');
     div.className = `chat-msg ${typeClass}`;
-    div.innerHTML = `
+    div.style.position = 'relative'; // For positioning the reply button
+
+    // Create the message content
+    const contentHtml = `
         <span class="time" style="color: #666; font-size: 0.8rem; margin-right: 5px;">${getCurrentTimeStr()}</span>
         <span class="sender">${sender === 'DISPATCH' ? '[DISPATCH]' : '[' + sender + ']'}</span> 
         <span class="text">${text}</span>
     `;
+    div.innerHTML = contentHtml;
+
+    // Add Discord-style reply button on hover if it's not the dispatcher
+    if (sender !== 'DISPATCH' && sender !== 'SYSTEM') {
+        const replyBtn = document.createElement('button');
+        replyBtn.className = 'chat-reply-btn';
+        replyBtn.innerHTML = '💬 Reply';
+        replyBtn.onclick = () => {
+            dispatchChatInput.value = `@${sender} `;
+            dispatchChatInput.focus();
+        };
+        div.appendChild(replyBtn);
+    }
 
     unifiedLogEl.appendChild(div);
     scrollToBottom(unifiedLogEl);
@@ -322,16 +469,26 @@ async function processDispatchChat() {
         return;
     }
 
+    // Secret VORE Protocol
+    if (text === "VORE") {
+        dispatchChatInput.value = '';
+        voreMode = true;
+        addChatMessage('SYSTEM', 'REALITY ANOMALY DETECTED. ALL UNITS EXTREME PANIC.', 'worried');
+        dispatchChatInput.placeholder = "Reply STOP to stabilize reality";
+        return;
+    }
+
     if (text === "STOP") {
         dispatchChatInput.value = '';
         dispatchChatInput.placeholder = "Transmit to units...";
-        addChatMessage('SYSTEM', 'PROTOCOL 8,997 OVERRIDDEN. ALL UNITS STAND DOWN.', 'serious');
+        addChatMessage('SYSTEM', 'PROTOCOL 8,997 / ANOMALY OVERRIDDEN. ALL UNITS STAND DOWN.', 'serious');
+        voreMode = false;
         clearPanic();
         return;
     }
 
     // Immediately show dispatch message
-    addChatMessage('DISPATCH', text, 'dispatch-msg');
+    addChatMessage('DISPATCH', text, 'dispatch-msg', true);
     dispatchChatInput.value = '';
 
     const reactionSender = getRandomItem(getActiveCallsigns());
@@ -407,21 +564,117 @@ function simulateEvent(specificCrime = null) {
         const reportingUnit = respondingUnits[0];
         const isROEEnabled = roeToggleCheckbox.checked;
 
+        const arrestingChats = [
+            "10-4, Dispatch. Suspect apprehended non-lethally. Requesting transport.",
+            "Target secured after minor struggle. Disarming and filing report.",
+            "Suspect detained successfully. Code 4. No serious casualties.",
+            "We have the suspect in cuffs. Transporting to booking now.",
+            "Perp gave up without a fight. Miraculous.",
+            "Target in custody. Only had to use the stun baton twice.",
+            "Suspect pacified and restrained. Requesting medical for minor lacerations.",
+            "He tried to run, but the net gun got him. Secured.",
+            "Subject is crying but otherwise unhurt. Heading back to station.",
+            "Suspect decided the holding cell was better than fighting. Detained.",
+            "Cuffed and stuffed. Code 4.",
+            "Got him. Non-lethal force authorized and applied.",
+            "Taser deployed effectively. Suspect is down and secured.",
+            "Target boxed in and surrendered. No shots fired.",
+            "Code 4. Suspect in the back of the cruiser.",
+            "Subject is compliant after a short foot chase.",
+            "Secured the area. Suspect is zip-tied and waiting for transport.",
+            "He tripped on some cyber-junk. Arrested without incident.",
+            "Suspect is in custody. Did not require lethal measures.",
+            "Brought him down with beanbags. He'll have some bruises but he's breathing.",
+            "Target tried to bribe us. Added to the charges. Suspect detained.",
+            "Suspect apprehended. He's asking for a lawyer... cute.",
+            "Subject pacified. No casualties to report.",
+            "Got them cornered. They surrendered their weapons.",
+            "Arrest complete. Transporting to sector 4 holding.",
+            "10-15 in progress. Target was uncooperative but non-lethal prevailed.",
+            "Suspect tackled and cuffed. We're all good here.",
+            "Subject is secured. My uniform is ruined though.",
+            "Target apprehended peacefully. A rare good day.",
+            "Suspect in custody. Confiscated a lot of illegal tech.",
+            "We got him. Non-lethal pacification was entirely successful.",
+            "Perp gave up after seeing the riot gear. Detained.",
+            "Arrest successful. Booking process initiated.",
+            "Suspect brought in alive per ROE directives.",
+            "Target subdued. Requesting an armored transport van.",
+            "Subject secured. Just some minor resistance.",
+            "He didn't want to test the shock batons. We have him.",
+            "Suspect detained. Area is clear of hostiles.",
+            "10-4. Suspect arrested and read their non-existent rights.",
+            "Target gave up as soon as we surrounded the building.",
+            "Secured. Target is ranting about a conspiracy, but safely cuffed.",
+            "Arrested without firing a single plasma round.",
+            "Suspect taken down with pepper gel. Whining, but secured.",
+            "Subject apprehended. Keeping the streets clean, one cell at a time.",
+            "Detained target successfully. Proceeding with evidence collection.",
+            "Code 4. Target is in the cruiser. Very cooperative under pressure.",
+            "Suspect arrested. ROE engaged and followed to the letter.",
+            "He surrendered when he saw the drone swarm. Cuffs are on.",
+            "Target taken into custody. Just a routine pickup.",
+            "Subject pacified non-lethally. Ready for the next call."
+        ];
+
+        const killingChats = [
+            "Target neutralized. Call the meat wagon. Filing report now.",
+            "Threat eliminated. No survivors. Returning to patrol.",
+            "Suspect resisted. Lethal force applied. Area is red but quiet.",
+            "Subject down. Send bio-hazard cleanup to our coordinates.",
+            "Target was hostile. Problem solved permanently.",
+            "Lethal measures authorized and executed. Target deceased.",
+            "Suspect eradicated. No vital signs.",
+            "Threat neutralized with extreme prejudice.",
+            "Code 4. Suspect is no longer a problem.",
+            "Target terminated. Requesting cleanup crew.",
+            "Subject decided to shoot back. Big mistake. Suspect down.",
+            "Target flatlined. Just another day in the sector.",
+            "Suspect eliminated. Area sterilized.",
+            "Hostile down. Lethal force was highly effective.",
+            "Target erased. No arrests to make today.",
+            "Suspect expired on scene. Ammo depleted.",
+            "Threat completely removed from the gene pool.",
+            "Target neutralized. Send the forensic scrubbers.",
+            "Suspect thought he was faster than a pulse rifle. He wasn't.",
+            "Subject is dead. Area secure.",
+            "Target destroyed. Moving on to the next assignment.",
+            "Suspect didn't make it. Neither did his cyberware.",
+            "Eliminated target. Filling out the body bag paperwork.",
+            "Hostile terminated. It was a short negotiation.",
+            "Target neutralized. Good grouping on the shots.",
+            "Suspect down and out. Send the coroner.",
+            "Subject eradicated. Code 4.",
+            "Threat resolved. Target is permanently offline.",
+            "Suspect executed per ROE disabled protocols.",
+            "Target eliminated. Blood on the pavement.",
+            "Hostile deceased. We didn't even give him a chance to run.",
+            "Suspect neutralized. Just a red stain now.",
+            "Target terminated. The streets are a bit safer... and messier.",
+            "Subject wiped out. No survivors found.",
+            "Threat engaged and destroyed.",
+            "Suspect eliminated. Lethal pacification complete.",
+            "Target is dead. Returning to precinct for ammo restock.",
+            "Hostile taken out. Didn't feel a thing... probably.",
+            "Suspect deceased. Let the scavengers have him.",
+            "Target completely annihilated. Who's next?",
+            "Subject eliminated. We're going to need a mop over here.",
+            "Threat neutralized. Target was liquidated.",
+            "Suspect terminated. Justice dispensed from the barrel.",
+            "Target is no more. Call it in.",
+            "Hostile eradicated. Fast and loud.",
+            "Suspect flatlined. Another one bites the dust.",
+            "Target eliminated. Lethal force is a beautiful thing.",
+            "Subject deceased. Cleanup requested at my 10-20.",
+            "Threat neutralized. The morgue is going to be full tonight.",
+            "Suspect terminated irrevocably. Code 4."
+        ];
+
         let reportMsg = "";
         if (isROEEnabled) {
-            reportMsg = getRandomItem([
-                `10-4, Dispatch. Suspect apprehended non-lethally. Requesting transport.`,
-                `Target secured after minor struggle. Disarming and filing report.`,
-                `Suspect detained successfully. Code 4. No serious casualties.`,
-                `We have the suspect in cuffs. Transporting to booking now.`
-            ]);
+            reportMsg = getRandomItem(arrestingChats);
         } else {
-            reportMsg = getRandomItem([
-                `Target neutralized. Call the meat wagon. Filing report now.`,
-                `Threat eliminated. No survivors. Returning to patrol.`,
-                `Suspect resisted. Lethal force applied. Area is red but quiet.`,
-                `Subject down. Send bio-hazard cleanup to our coordinates.`
-            ]);
+            reportMsg = getRandomItem(killingChats);
         }
 
         // Emulate the officer speaking in the radio channel
@@ -433,52 +686,60 @@ function simulateEvent(specificCrime = null) {
     }, 4000 + Math.random() * 6000); // 4 to 10 seconds later
 }
 
-function mockAddDocument(crime, respondingUnits, isROEEnabled) {
+async function mockAddDocument(crime, respondingUnits, isROEEnabled) {
     const doc = document.createElement('div');
     doc.className = "document-card";
 
-    let weapons = [];
-    let tactics = [];
-    let outcome = "";
-
-    if (isROEEnabled) {
-        weapons = ["Stun Baton", "Taser Mk4", "Beanbag Shotgun", "Pepper Spray", "Verbal Commands", "Restraint Cuffs", "Net Gun"];
-        tactics = ["deployed non-lethal deterrents", "established a perimeter and negotiated", "engaged in a minor physical struggle", "disarmed suspect with minimal force", "utilized compliance holds and takedowns"];
-        outcome = "Suspect apprehended and transported to MCPD holding cells. Medical requested for minor bruises.";
-    } else {
-        weapons = ["Standard Issue Pulse Pistol", "Tactical Shotgun", "Submachine Gun", "Heavy Ordnance", "High-Caliber Sniper Rifle", "Fragmentation Grenades", "Thermal Blade"];
-        tactics = ["breached location and laid down suppressing fire", "authorized free-fire zone upon arrival", "executed PIT maneuver followed by intense shootout", "utilized maximum pacification force", "neutralized suspect immediately upon visual confirmation"];
-        outcome = "Suspect neutralized via lethal force. Multiple traumatic injuries sustained. Deceased on scene.";
-    }
-
-    const weaponUsed1 = getRandomItem(weapons);
-    // Ensure weapon 2 is different if possible
-    let weaponUsed2 = getRandomItem(weapons);
-    if (weaponUsed1 === weaponUsed2) weaponUsed2 = getRandomItem(weapons);
-
-    const tacticUsed = getRandomItem(tactics);
     const officersStr = respondingUnits.join(', ');
     const dateStr = new Date().toLocaleDateString('en-US') + " " + getCurrentTimeStr();
 
-    const fullReport = `INCIDENT TYPE: ${crime.title}
+    // Initial placeholder
+    doc.innerHTML = `
+        <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
+        <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
+        <div class="doc-body" id="loading-doc-${Date.now()}">Generative AI linking to precinct... creating narrative...</div>
+        <button class="doc-btn" style="opacity: 0.5; cursor: not-allowed;">REPORT PENDING...</button>
+    `;
+    documentListEl.prepend(doc);
+    if (documentListEl.children.length > 15) {
+        documentListEl.removeChild(documentListEl.lastChild);
+    }
+
+    try {
+        const prompt = `You are a futuristic cyberpunk police officer writing an official incident report. The incident was: ${crime.title}. Responding officers: ${officersStr}. ROE was ${isROEEnabled ? 'ENABLED (Non-Lethal pacification used)' : 'DISABLED (Lethal force authorized and suspect was neutralized)'}. Write a concise, gritty, 4-sentence narrative of what happened and the outcome. Be extremely professional but cynical. No roleplay actions.`;
+
+        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+        if (response.ok) {
+            let aiText = await response.text();
+            aiText = aiText.replace(/^["']|["']$/g, '').trim();
+
+            const fullReport = `INCIDENT TYPE: ${crime.title}
 TIME FILED: ${dateStr}
 RESPONDING OFFICERS: ${officersStr}
 TOTAL UNITS DEPLOYED: ${respondingUnits.length}
 ${crime.group ? "GANG AFFILIATION: " + crime.group + "<br>" : ""}
--- INCIDENT NARRATIVE --<br>
-Officers arrived at the dispatched coordinates. They ${tacticUsed} utilizing a ${weaponUsed1} and a ${weaponUsed2}. <br><br>
-${outcome}<br><br>
-${isROEEnabled ? "Civilian area secured. Evidence logged in property room. All officers uninjured." : "Multiple shell casings recovered from officer firearms. Requesting bio-hazard cleanup crew to the coordinates for bodily fluid removal. Acceptable collateral damage parameters met."}`;
+-- INCIDENT NARRATIVE (AI GENERATED) --<br>
+${aiText}`;
 
-    doc.innerHTML = `
-        <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
-        <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
-        <div class="doc-body">Initial officer observation notes: Suspect matched description. Proceeded with tactical entry.</div>
-        <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
-    `;
-    documentListEl.prepend(doc); // Add to top
-    if (documentListEl.children.length > 15) {
-        documentListEl.removeChild(documentListEl.lastChild);
+            doc.innerHTML = `
+                <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
+                <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
+                <div class="doc-body">Initial officer observation notes: ${aiText.substring(0, 80)}...</div>
+                <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
+            `;
+        } else {
+            throw new Error("AI Generation Failed");
+        }
+    } catch (e) {
+        // Fallback if AI fails
+        const fallbackText = isROEEnabled ? "Suspect apprehended non-lethally." : "Suspect neutralized via lethal force.";
+        const fullReport = `INCIDENT TYPE: ${crime.title}\nTIME FILED: ${dateStr}\nRESPONDING OFFICERS: ${officersStr}\n-- NARRATIVE --\n${fallbackText}`;
+        doc.innerHTML = `
+            <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
+            <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
+            <div class="doc-body">Initial officer observation notes: ${fallbackText}</div>
+            <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
+        `;
     }
 }
 
@@ -565,14 +826,14 @@ function triggerPanic(unitName = null) {
 
     // Add to unified log immediately with localized flashing class
     const div = document.createElement('div');
-    div.className = `event-item high-priority panic-log-flash`;
+    div.className = `event - item high - priority panic - log - flash`;
     div.style.width = "100%";
-    div.id = `panic-log-${unit}-${Date.now()}`; // Unique ID
+    div.id = `panic - log - ${unit} -${Date.now()} `; // Unique ID
     div.innerHTML = `
-        <span class="time">${getCurrentTimeStr()}</span>
+            < span class="time" > ${getCurrentTimeStr()}</span >
         <div class="title" style="color:var(--panic-orange); font-size:1.1rem; text-shadow:0 0 10px var(--panic-red);">🚨 10-99: OFFICER PANIC BUTTON 🚨</div>
         <div style="color: #fff; font-size: 0.9rem;">Unit ${unit} reported distress. Priority 1 response required.</div>
-    `;
+        `;
     unifiedLogEl.appendChild(div);
     scrollToBottom(unifiedLogEl);
 
@@ -599,7 +860,7 @@ function resolveSpecificPanic(unit) {
     // Find the flashing log element for this unit and remove the flashing class
     // We can find all elements with panic-log-flash and look for unit name
     document.querySelectorAll('.panic-log-flash').forEach(el => {
-        if (el.innerHTML.includes(`Unit ${unit}`)) {
+        if (el.innerHTML.includes(`Unit ${unit} `)) {
             el.classList.remove('panic-log-flash');
             el.style.borderLeftColor = 'var(--panic-red)';
         }
@@ -613,9 +874,9 @@ function resolveSpecificPanic(unit) {
         clearPanicBtn.style.display = 'none';
 
         const div = document.createElement('div');
-        div.className = `event-item`;
+        div.className = `event - item`;
         div.innerHTML = `
-            <span class="time">${getCurrentTimeStr()}</span>
+            < span class="time" > ${getCurrentTimeStr()}</span >
             <div class="title" style="color:var(--accent-green);">CODE 4: PANIC SITUATION RESOLVED</div>
             <div style="font-size: 0.9rem; color: #ccc;">Situation under control. All units resume normal patrol.</div>
         `;
@@ -763,10 +1024,10 @@ function renderRoster() {
         const statusClass = unit.status.toLowerCase().replace(' ', '-');
 
         card.innerHTML = `
-            <div class="roster-info">
+            < div class="roster-info" >
                 <span class="roster-id">${unit.id}</span>
                 <span class="roster-status ${statusClass}">${unit.status}</span>
-            </div>
+            </div >
             <div class="roster-actions">
                 <button class="roster-btn toggle-duty" data-idx="${idx}">${unit.status === 'On Duty' ? 'Set Off Duty' : 'Set On Duty'}</button>
                 <button class="roster-btn suspend-unit" data-idx="${idx}">${unit.status === 'Suspended' ? 'Un-Suspend' : 'Suspend'}</button>
@@ -823,6 +1084,21 @@ setInterval(() => {
     }
 }, 60000); // Check every 60 seconds
 
+// Auto-Duty Logic loop
+setInterval(() => {
+    if (restModeToggle.checked || roster.length === 0) return;
+
+    // Pick a random officer to flip duty status occasionally
+    if (Math.random() < 0.3) {
+        const idx = Math.floor(Math.random() * roster.length);
+        if (roster[idx].status !== 'Suspended') {
+            const oldStatus = roster[idx].status;
+            roster[idx].status = oldStatus === 'On Duty' ? 'Off Duty' : 'On Duty';
+            renderRoster();
+        }
+    }
+}, 15000); // Check every 15 seconds
+
 // Initial render
 renderRoster();
 
@@ -854,17 +1130,38 @@ function sendPM() {
     pmHistory.innerHTML += `<div id="${typingId}" style="text-align:left; color:var(--text-dim); font-style:italic;"><span style="color:var(--accent-green);">[${currentPMUnit}]</span> parsing...</div>`;
     pmHistory.scrollTop = pmHistory.scrollHeight;
 
-    // Fetch AI Reply
+    // Fetch AI Reply with Mood Status
     setTimeout(async () => {
         try {
-            const prompt = "You are a cyberpunk police officer named " + currentPMUnit + " receiving a private direct text message from Dispatch: '" + text + "'. Reply briefly (1-2 sentences max). No asterisks, no roleplay actions.";
+            const prompt = `You are a cyberpunk police officer named ${currentPMUnit} receiving a private direct text message from Dispatch: '${text}'. First, decide your mood based on the message. Then reply briefly (1-2 sentences max). Format your response exactly like this: "MOOD: [Angry/Happy/Neutral/Scared/Resentful/etc] | [Your message]". No asterisks, no roleplay actions.`;
             const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
             if (response.ok) {
-                let reactionText = await response.text();
-                reactionText = reactionText.replace(/^["']|["']$/g, '').trim();
+                let aiText = await response.text();
+                aiText = aiText.replace(/^["']|["']$/g, '').trim();
+
+                // Parse mood
+                let mood = "Neutral";
+                let message = aiText;
+
+                if (aiText.includes('MOOD:') && aiText.includes('|')) {
+                    const parts = aiText.split('|');
+                    mood = parts[0].replace('MOOD:', '').trim();
+                    message = parts.slice(1).join('|').trim();
+                }
+
+                // Determine Mood Color
+                let moodColor = "#ccc";
+                const moodLower = mood.toLowerCase();
+                if (moodLower.includes('angry') || moodLower.includes('mad') || moodLower.includes('resentful')) moodColor = "var(--panic-red)";
+                else if (moodLower.includes('happy') || moodLower.includes('good') || moodLower.includes('calm')) moodColor = "var(--accent-green)";
+                else if (moodLower.includes('scared') || moodLower.includes('panic') || moodLower.includes('fear')) moodColor = "var(--panic-orange)";
+
                 const typingEl = document.getElementById(typingId);
                 if (typingEl) {
-                    typingEl.innerHTML = `<span style="color:var(--accent-green);">[${currentPMUnit}]</span> ${reactionText}`;
+                    typingEl.innerHTML = `
+                        <div style="font-size: 0.75rem; font-weight: bold; color: ${moodColor}; margin-bottom: 2px;">STATUS: ${mood.toUpperCase()}</div>
+                        <span style="color:var(--accent-green);">[${currentPMUnit}]</span> ${message}
+                    `;
                     typingEl.style.color = '#ccc';
                     typingEl.style.fontStyle = 'normal';
                 }
@@ -908,14 +1205,14 @@ function generateCitizens() {
     for (let i = 0; i < 1000; i++) {
         const first = getRandomItem(firstNames);
         const last = getRandomItem(lastNames);
-        const randId = `CID-${Math.floor(Math.random() * 900000) + 100000}`;
+        const randId = `CID - ${Math.floor(Math.random() * 900000) + 100000} `;
 
         globalCitizens.push({
             id: randId,
-            name: `${first} ${last}`,
+            name: `${first} ${last} `,
             status: 'Innocent', // Default
             trait: getRandomItem(traits),
-            dob: `20${Math.floor(Math.random() * 80) + 10}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}` // Random DOB between 2010 and 2089
+            dob: `20${Math.floor(Math.random() * 80) + 10} -${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')} -${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')} ` // Random DOB between 2010 and 2089
         });
     }
 }
@@ -931,14 +1228,14 @@ function renderCitizensList() {
         if (cit.status === 'Wanted') color = WANTED_COLOR;
 
         htmlChunk += `
-            <div class="roster-card" onclick="openCitizenDossier(${idx})" style="cursor:pointer; border-color: ${color};">
+            < div class="roster-card" onclick = "openCitizenDossier(${idx})" style = "cursor:pointer; border-color: ${color};" >
                 <div class="roster-info">
                     <span class="roster-id">${cit.id}</span>
                     <span class="roster-status" style="color:${color};text-transform:uppercase;">${cit.status}</span>
                 </div>
                 <div style="font-size: 1.1rem; color: #fff; margin-top: 5px;">${cit.name}</div>
-            </div>
-        `;
+            </div >
+            `;
     });
 
     citizensListEl.innerHTML = htmlChunk;
@@ -952,21 +1249,21 @@ function openCitizenDossier(idx) {
     if (cit.status === 'Suspicious') color = SUSPICIOUS_COLOR;
     if (cit.status === 'Wanted') color = WANTED_COLOR;
 
-    citizenPageTitle.textContent = `DOSSIER: ${cit.id}`;
+    citizenPageTitle.textContent = `DOSSIER: ${cit.id} `;
     citizenPageTitle.style.color = color;
-    citizenPageTitle.style.textShadow = `0 0 5px ${color}`;
+    citizenPageTitle.style.textShadow = `0 0 5px ${color} `;
 
     citizenPageBody.innerHTML = `
-        <div style="font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
-            ${cit.name}
-        </div>
+            < div style = "font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;" >
+                ${cit.name}
+        </div >
         <div><strong>DOB:</strong> ${cit.dob}</div>
         <div><strong>Standing:</strong> <span style="color:${color};text-transform:uppercase;">${cit.status}</span></div>
         <div style="margin-top: 15px;"><strong>Notes:</strong><br>${cit.trait}</div>
         <div style="margin-top: 15px; color: var(--text-dim); font-size: 0.85rem; border-top: 1px dashed var(--border-color); padding-top: 10px;">
             WARNING: Falsifying citizen records is a Class A Felony. Authorized personnel only.
         </div>
-    `;
+        `;
 
     citizenListView.style.display = 'none';
     citizenDossierView.style.display = 'flex';
@@ -1000,7 +1297,7 @@ function updateCitizenStatus(newStatus) {
         };
         wantedTargets.push(wantedData);
         updateWantedUI();
-        addChatMessage('DISPATCH', `ALL UNITS: BOLO issued for ${cit.name} (${cit.id}). Target added to active Wanted List.`, 'dispatch-msg');
+        addChatMessage('DISPATCH', `ALL UNITS: BOLO issued for ${cit.name}(${cit.id}).Target added to active Wanted List.`, 'dispatch-msg');
     }
 
     closeDossier();
@@ -1042,10 +1339,10 @@ function generateWantedTargets() {
     freemanDiv.onmouseout = () => freemanDiv.style.background = "rgba(255, 215, 0, 0.05)";
 
     freemanDiv.innerHTML = `
-        <strong>[PRIME MULTIVERSE TARGET] GORDON FREEMAN</strong><br>
-        Crime: Resonance Cascade, Assault on Overwatch, Anti-Civil Activity Level 1.<br>
-        Bounty: 9,236,000 Credits. EXTREME PREJUDICE MANDATORY.
-    `;
+            < strong > [PRIME MULTIVERSE TARGET] GORDON FREEMAN</strong > <br>
+                Crime: Resonance Cascade, Assault on Overwatch, Anti-Civil Activity Level 1.<br>
+                    Bounty: 9,236,000 Credits. EXTREME PREJUDICE MANDATORY.
+                    `;
     freemanDiv.addEventListener('click', () => {
         openReportModal(`
             <h3 style="color:#ffd700; border-bottom: 1px solid #ffd700; padding-bottom: 10px;">GORDON FREEMAN - THREAT LEVEL: KETER</h3>
@@ -1073,10 +1370,10 @@ function generateWantedTargets() {
         targetDiv.onmouseout = () => targetDiv.style.background = "rgba(255, 255, 255, 0.02)";
 
         targetDiv.innerHTML = `
-            <strong>HVT: "${name}"</strong><br>
-            Crime: ${crime}<br>
-            Bounty: ${bounty} Credits. DEAD OR ALIVE.
-        `;
+                    <strong>HVT: "${name}"</strong><br>
+                        Crime: ${crime}<br>
+                            Bounty: ${bounty} Credits. DEAD OR ALIVE.
+                            `;
 
         targetDiv.addEventListener('click', () => {
             openReportModal(`
@@ -1128,17 +1425,17 @@ dbSearchBtn.addEventListener('click', () => {
         const status = isGuilty ? "<span style='color:var(--panic-orange); font-weight:bold;'>WARRANT ISSUED</span>" : "<span style='color:var(--accent-green);'>CLEARED (TEMPORARILY)</span>";
 
         dbResults.innerHTML = `
-            <div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
-                <strong style="color: var(--accent-blue);">CITIZEN RECORD RETRIEVED:</strong>
-            </div>
-            <div style="margin-bottom: 5px;"><strong>Name/ID:</strong> ${query}</div>
-            <div style="margin-bottom: 5px;"><strong>System Status:</strong> ${status}</div>
-            <div style="margin-bottom: 15px;"><strong>Known Infractions:</strong> <span style="color:#ccc;">${infractions}</span></div>
-            
-            <button class="doc-btn" style="width: 100%; border-color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'}; color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'};" onclick="alert('Dispatching units to citizen residence.')">DISPATCH PATROL TO RESIDENCE</button>
-            <br><br>
-            <em style="color:#aaa; font-size:0.85rem;">[Directive 4-A Applied: All citizens subject to random pacification patrols and warrantless search.]</em>
-        `;
+                            <div style="margin-bottom: 10px; border-bottom: 1px solid var(--border-color); padding-bottom: 5px;">
+                                <strong style="color: var(--accent-blue);">CITIZEN RECORD RETRIEVED:</strong>
+                            </div>
+                            <div style="margin-bottom: 5px;"><strong>Name/ID:</strong> ${query}</div>
+                            <div style="margin-bottom: 5px;"><strong>System Status:</strong> ${status}</div>
+                            <div style="margin-bottom: 15px;"><strong>Known Infractions:</strong> <span style="color:#ccc;">${infractions}</span></div>
+
+                            <button class="doc-btn" style="width: 100%; border-color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'}; color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'};" onclick="alert('Dispatching units to citizen residence.')">DISPATCH PATROL TO RESIDENCE</button>
+                            <br><br>
+                                <em style="color:#aaa; font-size:0.85rem;">[Directive 4-A Applied: All citizens subject to random pacification patrols and warrantless search.]</em>
+                                `;
     }, 1200); // 1.2 second "search" delay for realism
 });
 

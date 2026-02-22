@@ -443,6 +443,32 @@ button:active {
 
 /* Removed fullscreen panic overlay styling */
 
+.chat-reply-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(40, 40, 40, 0.9);
+    border: 1px solid var(--border-color);
+    color: var(--text-dim);
+    padding: 3px 8px;
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    border-radius: 4px;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+.chat-msg:hover .chat-reply-btn {
+    opacity: 1;
+}
+
+.chat-reply-btn:hover {
+    background: var(--accent-blue);
+    color: #000;
+}
+
 /* Animations */
 @keyframes blink {
 
