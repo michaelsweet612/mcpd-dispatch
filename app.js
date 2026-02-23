@@ -37,6 +37,7 @@ const dispatchChatSend = document.getElementById('dispatch-chat-send');
 const wantedListEl = document.getElementById('wanted-list');
 const dbSearchInput = document.getElementById('db-search-input');
 const dbSearchBtn = document.getElementById('db-search-btn');
+const dbAiProfileBtn = document.getElementById('db-ai-profile-btn');
 const dbResults = document.getElementById('db-results');
 
 // Global State
@@ -369,51 +370,96 @@ function getCurrentTimeStr() {
     return now.toLocaleTimeString('en-US', { hour12: false, hour: "2-digit", minute: "2-digit" });
 }
 
+let isFetchingChat = false;
+
 // Emulate Incoming Chat
-function simulateChat() {
+async function simulateChat() {
     if (restModeToggle.checked) return; // Pause all activity if rest mode is on
     if (!autoEventsCheckbox.checked) return;
+    if (isFetchingChat) return; // Prevent overlapping API calls
+
+    const sender = getRandomItem(getActiveCallsigns());
+    if (!sender) return;
 
     let msgTypeClass = '';
-    let msgText = '';
-    const sender = getRandomItem(getActiveCallsigns());
+    let scenario = '';
     let replyTo = null;
 
     if (voreMode) {
         msgTypeClass = 'worried';
-        msgText = getRandomItem(voreChats);
+        scenario = "You are terrified of a giant mouth in the sky. Express extreme surreal panic about being eaten.";
+    } else if (activePanics.size >= 5) {
+        msgTypeClass = 'worried';
+        scenario = "The city is falling apart. Multiple officers have triggered panic buttons. Express extreme stress and fear.";
     } else {
-        // Check if there are 5 or more active panics
-        if (activePanics.size >= 5) {
-            msgTypeClass = 'worried';
-            msgText = getRandomItem(worriedChats);
-        } else {
-            // Options: joke, serious, or greeting/reply
-            const rand = Math.random();
-            if (rand < 0.2) {
-                // 20% chance to be a greeting/reply to someone else
-                msgTypeClass = 'joking';
-                msgText = getRandomItem(greetingChats);
-
-                // Try to find another active unit to reply to
-                const active = getActiveCallsigns().filter(u => u !== sender);
-                if (active.length > 0) {
-                    replyTo = getRandomItem(active);
-                    msgText = `@${replyTo} ${msgText}`;
-                }
-            } else if (rand < 0.5) {
-                // 30% joke
-                msgTypeClass = 'joking';
-                msgText = getRandomItem(jokes);
+        const rand = Math.random();
+        if (rand < 0.2) {
+            msgTypeClass = 'joking';
+            const active = getActiveCallsigns().filter(u => u !== sender);
+            if (active.length > 0) {
+                replyTo = getRandomItem(active);
+                scenario = `You are casually greeting officer ${replyTo} over the radio network.`;
             } else {
-                // 50% serious
-                msgTypeClass = 'serious';
-                msgText = getRandomItem(seriousChats);
+                scenario = "You are making a dark humored, cynical joke about patrol duties.";
             }
+        } else if (rand < 0.5) {
+            msgTypeClass = 'joking';
+            scenario = "You are making a dark humored, cynical joke about the city or your job.";
+        } else {
+            msgTypeClass = 'serious';
+            scenario = "You are reporting a standard, gritty, serious patrol status (e.g., clearing an alleyway or checking a sector).";
         }
     }
 
-    addChatMessage(sender, msgText, msgTypeClass, false);
+    isFetchingChat = true;
+
+    try {
+        const prompt = `You are a cyberpunk police officer named ${sender} speaking over the radio. Context: ${scenario}. Keep it to 1 concise, gritty sentence. No roleplay actions, no quotes.`;
+        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+
+        if (response.ok) {
+            let msgText = await response.text();
+            msgText = msgText.replace(/^["']|["']$/g, '').trim();
+
+            if (replyTo && msgTypeClass === 'joking' && !msgText.includes(replyTo)) {
+                msgText = `@${replyTo} ${msgText}`;
+            }
+
+            addChatMessage(sender, msgText, msgTypeClass, false);
+
+            // 5% chance to pin to Radio Important Logs
+            if (Math.random() < 0.05) {
+                pinRadioLog(sender, msgText);
+            }
+        }
+    } catch (e) {
+        console.error("AI chat generation failed", e);
+    } finally {
+        isFetchingChat = false;
+    }
+}
+
+function pinRadioLog(sender, message) {
+    const doc = document.createElement('div');
+    doc.className = "event-item high-priority";
+    doc.style.borderLeft = "3px solid var(--panic-orange)";
+    doc.style.paddingLeft = "10px";
+    doc.style.marginBottom = "10px";
+
+    doc.innerHTML = `
+        <span class="time">${getCurrentTimeStr()}</span>
+        <div class="title" style="color:var(--panic-orange); display:flex; justify-content:space-between;">
+            <span>📌 PINNED RADIO CHATTER</span>
+            <span style="font-size:0.8rem; color:var(--text-dim);">Unit: ${sender}</span>
+        </div>
+        <div style="color: #fff; font-size: 0.95rem; font-style: italic; margin-top:5px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 8px;">
+            <span style="color:var(--panic-red);">[URGENT]</span> "${message}"
+        </div>
+    `;
+    documentListEl.prepend(doc);
+    if (documentListEl.children.length > 15) {
+        documentListEl.removeChild(documentListEl.lastChild);
+    }
 }
 
 function addChatMessage(sender, text, typeClass = 'serious', isPlayer = false) {
@@ -688,17 +734,24 @@ function simulateEvent(specificCrime = null) {
 
 async function mockAddDocument(crime, respondingUnits, isROEEnabled) {
     const doc = document.createElement('div');
-    doc.className = "document-card";
+    doc.className = "event-item high-priority";
+    doc.style.borderLeft = "3px solid var(--accent-blue)";
+    doc.style.paddingLeft = "10px";
+    doc.style.marginBottom = "10px";
 
     const officersStr = respondingUnits.join(', ');
     const dateStr = new Date().toLocaleDateString('en-US') + " " + getCurrentTimeStr();
 
     // Initial placeholder
     doc.innerHTML = `
-        <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
-        <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
-        <div class="doc-body" id="loading-doc-${Date.now()}">Generative AI linking to precinct... creating narrative...</div>
-        <button class="doc-btn" style="opacity: 0.5; cursor: not-allowed;">REPORT PENDING...</button>
+        <span class="time">${getCurrentTimeStr()}</span>
+        <div class="title" style="color:var(--accent-blue); display:flex; justify-content:space-between;">
+            <span>📌 PINNED TRANSMISSION: ${crime.title.split(':')[0]}</span>
+            <span style="font-size:0.8rem; color:var(--text-dim);">Units: ${officersStr}</span>
+        </div>
+        <div style="color: var(--text-dim); font-size: 0.95rem; font-style: italic; margin-top:5px;" id="loading-doc-${Date.now()}">
+            Decrypting generative AI transmission...
+        </div>
     `;
     documentListEl.prepend(doc);
     if (documentListEl.children.length > 15) {
@@ -722,10 +775,15 @@ ${crime.group ? "GANG AFFILIATION: " + crime.group + "<br>" : ""}
 ${aiText}`;
 
             doc.innerHTML = `
-                <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
-                <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
-                <div class="doc-body">Initial officer observation notes: ${aiText.substring(0, 80)}...</div>
-                <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
+                <span class="time">${getCurrentTimeStr()}</span>
+                <div class="title" style="color:var(--accent-blue); display:flex; justify-content:space-between;">
+                    <span>📌 PINNED TRANSMISSION: ${crime.title.split(':')[0]}</span>
+                    <span style="font-size:0.8rem; color:var(--text-dim);">Units: ${officersStr}</span>
+                </div>
+                <div style="color: #fff; font-size: 0.95rem; font-style: italic; margin-top:5px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 8px;">
+                    "${aiText}"
+                </div>
+                <button class="doc-btn" style="margin-top: 10px; padding: 5px;" onclick="openReportModal(\`${fullReport}\`)">VIEW AUTOMATED REPORT EXTRACT</button>
             `;
         } else {
             throw new Error("AI Generation Failed");
@@ -735,10 +793,15 @@ ${aiText}`;
         const fallbackText = isROEEnabled ? "Suspect apprehended non-lethally." : "Suspect neutralized via lethal force.";
         const fullReport = `INCIDENT TYPE: ${crime.title}\nTIME FILED: ${dateStr}\nRESPONDING OFFICERS: ${officersStr}\n-- NARRATIVE --\n${fallbackText}`;
         doc.innerHTML = `
-            <div class="doc-header">REPORT: ${crime.title.split(':')[0]}</div>
-            <div class="doc-meta">Filed: ${getCurrentTimeStr()} | Officers: ${officersStr}</div>
-            <div class="doc-body">Initial officer observation notes: ${fallbackText}</div>
-            <button class="doc-btn" onclick="openReportModal(\`${fullReport}\`)">VIEW FULL REPORT</button>
+            <span class="time">${getCurrentTimeStr()}</span>
+            <div class="title" style="color:var(--accent-blue); display:flex; justify-content:space-between;">
+                <span>📌 PINNED TRANSMISSION: ${crime.title.split(':')[0]}</span>
+                <span style="font-size:0.8rem; color:var(--text-dim);">Units: ${officersStr}</span>
+            </div>
+            <div style="color: #fff; font-size: 0.95rem; font-style: italic; margin-top:5px; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 8px;">
+                "${fallbackText}"
+            </div>
+            <button class="doc-btn" style="margin-top: 10px; padding: 5px;" onclick="openReportModal(\`${fullReport}\`)">VIEW AUTOMATED REPORT EXTRACT</button>
         `;
     }
 }
@@ -826,14 +889,14 @@ function triggerPanic(unitName = null) {
 
     // Add to unified log immediately with localized flashing class
     const div = document.createElement('div');
-    div.className = `event - item high - priority panic - log - flash`;
+    div.className = `event-item high-priority panic-log-flash`;
     div.style.width = "100%";
-    div.id = `panic - log - ${unit} -${Date.now()} `; // Unique ID
+    div.id = `panic-log-${unit}-${Date.now()}`; // Unique ID
     div.innerHTML = `
-            < span class="time" > ${getCurrentTimeStr()}</span >
+        <span class="time">${getCurrentTimeStr()}</span>
         <div class="title" style="color:var(--panic-orange); font-size:1.1rem; text-shadow:0 0 10px var(--panic-red);">🚨 10-99: OFFICER PANIC BUTTON 🚨</div>
         <div style="color: #fff; font-size: 0.9rem;">Unit ${unit} reported distress. Priority 1 response required.</div>
-        `;
+    `;
     unifiedLogEl.appendChild(div);
     scrollToBottom(unifiedLogEl);
 
@@ -874,9 +937,9 @@ function resolveSpecificPanic(unit) {
         clearPanicBtn.style.display = 'none';
 
         const div = document.createElement('div');
-        div.className = `event - item`;
+        div.className = `event-item`;
         div.innerHTML = `
-            < span class="time" > ${getCurrentTimeStr()}</span >
+            <span class="time">${getCurrentTimeStr()}</span>
             <div class="title" style="color:var(--accent-green);">CODE 4: PANIC SITUATION RESOLVED</div>
             <div style="font-size: 0.9rem; color: #ccc;">Situation under control. All units resume normal patrol.</div>
         `;
@@ -1024,10 +1087,10 @@ function renderRoster() {
         const statusClass = unit.status.toLowerCase().replace(' ', '-');
 
         card.innerHTML = `
-            < div class="roster-info" >
+            <div class="roster-info">
                 <span class="roster-id">${unit.id}</span>
                 <span class="roster-status ${statusClass}">${unit.status}</span>
-            </div >
+            </div>
             <div class="roster-actions">
                 <button class="roster-btn toggle-duty" data-idx="${idx}">${unit.status === 'On Duty' ? 'Set Off Duty' : 'Set On Duty'}</button>
                 <button class="roster-btn suspend-unit" data-idx="${idx}">${unit.status === 'Suspended' ? 'Un-Suspend' : 'Suspend'}</button>
@@ -1205,14 +1268,14 @@ function generateCitizens() {
     for (let i = 0; i < 1000; i++) {
         const first = getRandomItem(firstNames);
         const last = getRandomItem(lastNames);
-        const randId = `CID - ${Math.floor(Math.random() * 900000) + 100000} `;
+        const randId = `CID-${Math.floor(Math.random() * 900000) + 100000}`;
 
         globalCitizens.push({
             id: randId,
-            name: `${first} ${last} `,
+            name: `${first} ${last}`,
             status: 'Innocent', // Default
             trait: getRandomItem(traits),
-            dob: `20${Math.floor(Math.random() * 80) + 10} -${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')} -${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')} ` // Random DOB between 2010 and 2089
+            dob: `20${Math.floor(Math.random() * 80) + 10}-${String(Math.floor(Math.random() * 12) + 1).padStart(2, '0')}-${String(Math.floor(Math.random() * 28) + 1).padStart(2, '0')}` // Random DOB between 2010 and 2089
         });
     }
 }
@@ -1228,13 +1291,13 @@ function renderCitizensList() {
         if (cit.status === 'Wanted') color = WANTED_COLOR;
 
         htmlChunk += `
-            < div class="roster-card" onclick = "openCitizenDossier(${idx})" style = "cursor:pointer; border-color: ${color};" >
+            <div class="roster-card" onclick="openCitizenDossier(${idx})" style="cursor:pointer; border-color: ${color};">
                 <div class="roster-info">
                     <span class="roster-id">${cit.id}</span>
                     <span class="roster-status" style="color:${color};text-transform:uppercase;">${cit.status}</span>
                 </div>
                 <div style="font-size: 1.1rem; color: #fff; margin-top: 5px;">${cit.name}</div>
-            </div >
+            </div>
             `;
     });
 
@@ -1249,14 +1312,14 @@ function openCitizenDossier(idx) {
     if (cit.status === 'Suspicious') color = SUSPICIOUS_COLOR;
     if (cit.status === 'Wanted') color = WANTED_COLOR;
 
-    citizenPageTitle.textContent = `DOSSIER: ${cit.id} `;
+    citizenPageTitle.textContent = `DOSSIER: ${cit.id}`;
     citizenPageTitle.style.color = color;
-    citizenPageTitle.style.textShadow = `0 0 5px ${color} `;
+    citizenPageTitle.style.textShadow = `0 0 5px ${color}`;
 
     citizenPageBody.innerHTML = `
-            < div style = "font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;" >
-                ${cit.name}
-        </div >
+        <div style="font-size: 1.5rem; color: #fff; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; margin-bottom: 10px;">
+            ${cit.name}
+        </div>
         <div><strong>DOB:</strong> ${cit.dob}</div>
         <div><strong>Standing:</strong> <span style="color:${color};text-transform:uppercase;">${cit.status}</span></div>
         <div style="margin-top: 15px;"><strong>Notes:</strong><br>${cit.trait}</div>
@@ -1396,6 +1459,7 @@ generateWantedTargets(); // Initial call
 dbSearchBtn.addEventListener('click', () => {
     const query = dbSearchInput.value.trim().toUpperCase();
     dbResults.style.display = 'block';
+    dbAiProfileBtn.style.display = 'none';
 
     if (!query) {
         dbResults.innerHTML = '<span style="color:var(--panic-red);">ERROR: Invalid query string. Enter Citizen ID or Name.</span>';
@@ -1435,13 +1499,48 @@ dbSearchBtn.addEventListener('click', () => {
                             <button class="doc-btn" style="width: 100%; border-color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'}; color: ${isGuilty ? 'var(--panic-red)' : 'var(--accent-green)'};" onclick="alert('Dispatching units to citizen residence.')">DISPATCH PATROL TO RESIDENCE</button>
                             <br><br>
                                 <em style="color:#aaa; font-size:0.85rem;">[Directive 4-A Applied: All citizens subject to random pacification patrols and warrantless search.]</em>
-                                `;
+                                <div id="ai-profile-output" style="margin-top: 15px;"></div>
+                        `;
+        dbAiProfileBtn.style.display = 'inline-block';
     }, 1200); // 1.2 second "search" delay for realism
 });
 
 dbSearchInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') {
         dbSearchBtn.click();
+    }
+});
+
+let isFetchingProfile = false;
+dbAiProfileBtn.addEventListener('click', async () => {
+    if (isFetchingProfile) return;
+
+    const query = dbSearchInput.value.trim().toUpperCase();
+    const profileOutput = document.getElementById('ai-profile-output');
+    if (!profileOutput) return;
+
+    profileOutput.innerHTML = `<span style="color:var(--text-dim); font-style:italic;">[SYSTEM] Generating psychological assessment...</span>`;
+    isFetchingProfile = true;
+
+    try {
+        const prompt = `You are a cold, cynical AI profiling engine for a totalitarian cyberpunk police force. The suspect is named/ID'd as: ${query}. Write a short, brutal 2-sentence psychological and threat assessment of this individual based on generic cyberpunk tropes. No roleplay actions, output plain text.`;
+        const response = await fetch('https://text.pollinations.ai/' + encodeURIComponent(prompt));
+        if (response.ok) {
+            let aiText = await response.text();
+            aiText = aiText.replace(/^["']|["']$/g, '').trim();
+            profileOutput.innerHTML = `
+                <div style="border: 1px dashed var(--accent-green); padding: 10px; background: rgba(0, 230, 118, 0.05);">
+                    <strong style="color:var(--accent-green);">AI ASSESSMENT COMPLETE:</strong><br>
+                    <span style="color:#ddd;">"${aiText}"</span>
+                </div>
+            `;
+        } else {
+            throw new Error("AI Generation Failed");
+        }
+    } catch (e) {
+        profileOutput.innerHTML = `<span style="color:var(--panic-red);">[SYSTEM FAILURE] Unable to reach profiling servers.</span>`;
+    } finally {
+        isFetchingProfile = false;
     }
 });
 

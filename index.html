@@ -103,7 +103,7 @@
                     <div class="tab active" id="tab-unified" style="cursor: pointer; white-space: nowrap;">DISPATCH LOG
                     </div>
                     <div class="tab" id="tab-documents"
-                        style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">DOCUMENT LOGS</div>
+                        style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">IMPORTANT RADIO LOGS</div>
                     <div class="tab" id="tab-personnel"
                         style="cursor: pointer; color: var(--text-dim); white-space: nowrap;">PERSONNEL</div>
                     <div class="tab" id="tab-database"
@@ -121,12 +121,12 @@
                     <!-- Events and Chats populated by JS -->
                 </div>
 
-                <!-- DOCUMENTS VIEW (Hidden by default) -->
+                <!-- PINNED RADIO VIEW (Hidden by default) -->
                 <div class="panel-content scrollable" id="document-log"
                     style="flex: 1; margin-bottom: 10px; display: none;">
                     <h3
                         style="color: #fff; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px;">
-                        OFFICIAL MCPD ARREST REPORTS</h3>
+                        PINNED RADIO TRANSMISSIONS</h3>
                     <div id="document-list">
                         <!-- Mock documents -->
                     </div>
@@ -163,6 +163,9 @@
                             style="flex: 1; background: rgba(0,0,0,0.5); border: 1px solid var(--accent-blue); color: #fff; padding: 10px; font-family: 'Share Tech Mono', monospace; font-size: 1rem; outline: none;">
                         <button id="db-search-btn"
                             style="padding: 10px 20px; font-size: 1rem; border-color: var(--accent-blue); color: var(--accent-blue);">SEARCH</button>
+                        <button id="db-ai-profile-btn"
+                            style="padding: 10px 20px; font-size: 1rem; border-color: var(--accent-green); color: var(--accent-green); display: none;">AI
+                            PROFILE ANALYSIS</button>
                     </div>
 
                     <div id="db-results"
